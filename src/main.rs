@@ -8,7 +8,10 @@ use observability::collect::{self, Control, Source};
 use observability::config::{self, Config};
 use observability::keys::{Dispatcher, KeyMap};
 use observability::model::Snapshot;
-use observability::ui::{self, theme::Theme, theme::detect_truecolor};
+use observability::ui::{
+    self,
+    theme::{Theme, cell_aspect, detect_truecolor},
+};
 use observability::{gpu, probe};
 use ratatui::crossterm::event::{self, Event, KeyEventKind};
 
@@ -83,7 +86,7 @@ fn run_tui() -> io::Result<()> {
         .theme
         .truecolor
         .unwrap_or_else(|| detect_truecolor(std::env::var("COLORTERM").ok().as_deref()));
-    let theme = Theme::new(truecolor, cfg.temps.warm, cfg.temps.hot);
+    let mut theme = Theme::new(truecolor, cfg.temps.warm, cfg.temps.hot);
     let ctl = Control::new(Duration::from_millis(cfg.refresh_ms), cfg.net_iface.clone());
     let rx = collect::spawn(ctl.clone(), || SystemSource::new(gpu::detect()));
     let mut app = App::new(&cfg);
@@ -97,7 +100,8 @@ fn run_tui() -> io::Result<()> {
             return Err(e);
         }
     };
-    let result = event_loop(&mut terminal, &mut app, &mut disp, &theme, &ctl, &rx);
+    theme.cell_aspect = detect_cell_aspect();
+    let result = event_loop(&mut terminal, &mut app, &mut disp, &mut theme, &ctl, &rx);
     ratatui::restore();
     ctl.stop();
     result
@@ -107,7 +111,7 @@ fn event_loop(
     terminal: &mut ratatui::DefaultTerminal,
     app: &mut App,
     disp: &mut Dispatcher,
-    theme: &Theme,
+    theme: &mut Theme,
     ctl: &Control,
     rx: &Receiver<Snapshot>,
 ) -> io::Result<()> {
@@ -126,7 +130,7 @@ fn event_loop(
             }
         }
         if dirty {
-            terminal.draw(|f| ui::draw(f, app, theme))?;
+            terminal.draw(|f| ui::draw(f, app, &*theme))?;
             dirty = false;
         }
         if !event::poll(Duration::from_millis(100))? {
@@ -150,8 +154,20 @@ fn event_loop(
                     }
                 }
             }
-            Event::Resize(..) => dirty = true,
+            Event::Resize(..) => {
+                // A font size change also arrives as Resize.
+                theme.cell_aspect = detect_cell_aspect();
+                dirty = true;
+            }
             _ => {}
         }
+    }
+}
+
+/// Aspect ratio of the current terminal cell (2.0 if it does not report pixels).
+fn detect_cell_aspect() -> f64 {
+    match ratatui::crossterm::terminal::window_size() {
+        Ok(ws) => cell_aspect(ws.columns, ws.rows, ws.width, ws.height),
+        Err(_) => 2.0,
     }
 }

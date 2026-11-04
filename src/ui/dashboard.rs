@@ -146,6 +146,7 @@ fn donut(f: &mut Frame, area: Rect, block: Block<'static>, d: Donut, theme: &The
             segments: d.segments,
             hole: 0.6,
             label: Some((&d.center, theme.fg)),
+            aspect: theme.cell_aspect,
         },
         pie_area,
     );

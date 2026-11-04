@@ -1,4 +1,4 @@
-//! Rasterization with braille characters (2×4 dots per cell): pies, areas and bars.
+//! Opaque block rasterization: pies (2×2 quadrants per cell), areas and bars.
 
 use ratatui::{
     buffer::Buffer,
@@ -10,27 +10,60 @@ use ratatui::{
 
 use crate::ui::theme::Theme;
 
-/// Bit of each dot: `BITS[column][row]`.
-const BITS: [[u8; 4]; 2] = [[0x01, 0x02, 0x04, 0x40], [0x08, 0x10, 0x20, 0x80]];
-
-/// `[row][column]` grid of optional braille cells with associated data.
+/// `[row][column]` grid of optional cells with associated data.
 pub type CellGrid<T> = Vec<Vec<Option<(char, T)>>>;
 
-fn braille(bits: u8) -> char {
-    char::from_u32(0x2800 + bits as u32).unwrap_or(' ')
+/// Quadrant character for a 4-bit mask: UL=1, UR=2, LL=4, LR=8.
+pub fn quadrant(bits: u8) -> char {
+    const Q: [char; 16] = [
+        ' ', '▘', '▝', '▀', '▖', '▌', '▞', '▛', '▗', '▚', '▐', '▜', '▄', '▙', '▟', '█',
+    ];
+    Q[(bits & 0x0f) as usize]
 }
 
-/// Pie (or donut if `hole > 0`, empty fraction of the radius). `[row][column]`.
-/// Angle 0 is at the top and grows clockwise. Each cell takes the majority color.
-pub fn pie_cells(width: u16, height: u16, segments: &[(f64, Color)], hole: f64) -> CellGrid<Color> {
+/// Colors of a pie cell: the marked quadrants use `fg`; the rest use `bg`
+/// (or the terminal background if `None`). This way a cell can hold two segments without gaps.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct PieCell {
+    pub fg: Color,
+    pub bg: Option<Color>,
+}
+
+/// Size in cells (width, height) of the largest pie that fits in the area and is an exact circle
+/// for cells of aspect ratio `aspect` (height/width).
+pub fn pie_size(area_w: u16, area_h: u16, aspect: f64) -> (u16, u16) {
+    if area_w == 0 || area_h == 0 {
+        return (0, 0);
+    }
+    let w = (area_h as f64 * aspect).round() as u16;
+    if w <= area_w {
+        (w.max(1), area_h)
+    } else {
+        let h = (area_w as f64 / aspect).round().max(1.0) as u16;
+        (area_w, h.min(area_h))
+    }
+}
+
+/// Pie (or donut if `hole > 0`, empty fraction of the radius) with opaque quadrant blocks.
+/// `aspect` is the cell height/width ratio: the geometry is computed in physical units
+/// so the result is an exact circle. Angle 0 is at the top and grows clockwise.
+/// `[row][column]`.
+pub fn pie_cells(
+    width: u16,
+    height: u16,
+    segments: &[(f64, Color)],
+    hole: f64,
+    aspect: f64,
+) -> CellGrid<PieCell> {
     let (w, h) = (width as usize, height as usize);
     let mut out = vec![vec![None; w]; h];
     let total: f64 = segments.iter().map(|s| s.0.max(0.0)).sum();
-    if total <= 0.0 || w == 0 || h == 0 {
+    if total <= 0.0 || w == 0 || h == 0 || !aspect.is_finite() || aspect <= 0.0 {
         return out;
     }
-    let radius = (w * 2).min(h * 4) as f64 / 2.0;
-    let (cx, cy) = (w as f64, h as f64 * 2.0);
+    // Units: cell width = 1; cell height = aspect.
+    let (cx, cy) = (w as f64 / 2.0, h as f64 * aspect / 2.0);
+    let radius = cx.min(cy);
     let mut bounds = Vec::new();
     let mut acc = 0.0;
     for (f, c) in segments {
@@ -38,73 +71,104 @@ pub fn pie_cells(width: u16, height: u16, segments: &[(f64, Color)], hole: f64) 
         bounds.push((acc, acc + f, *c));
         acc += f;
     }
+    let color_at = |px: f64, py: f64| -> Option<Color> {
+        let (dx, dy) = (px - cx, py - cy);
+        let d = (dx * dx + dy * dy).sqrt();
+        if d > radius || d < radius * hole {
+            return None;
+        }
+        let angle = (dx.atan2(-dy) / std::f64::consts::TAU).rem_euclid(1.0);
+        bounds
+            .iter()
+            .find(|(a, b, _)| angle >= *a && angle < *b)
+            .or(bounds.last())
+            .map(|(_, _, c)| *c)
+    };
     for (row, out_row) in out.iter_mut().enumerate() {
         for (col, cell) in out_row.iter_mut().enumerate() {
-            let mut bits = 0u8;
+            // Subpixels in order UL, UR, LL, LR.
+            let subs: [Option<Color>; 4] = [(0, 0), (1, 0), (0, 1), (1, 1)].map(|(sx, sy)| {
+                color_at(
+                    col as f64 + (sx as f64 + 0.5) / 2.0,
+                    (row as f64 + (sy as f64 + 0.5) / 2.0) * aspect,
+                )
+            });
             let mut votes: Vec<(Color, u32)> = Vec::new();
-            for (dx, dot_col) in BITS.iter().enumerate() {
-                for (dy, bit) in dot_col.iter().enumerate() {
-                    let px = (col * 2 + dx) as f64 + 0.5 - cx;
-                    let py = (row * 4 + dy) as f64 + 0.5 - cy;
-                    let d = (px * px + py * py).sqrt();
-                    if d > radius || d < radius * hole {
-                        continue;
-                    }
-                    let angle = (px.atan2(-py) / std::f64::consts::TAU).rem_euclid(1.0);
-                    let color = bounds
-                        .iter()
-                        .find(|(a, b, _)| angle >= *a && angle < *b)
-                        .or(bounds.last())
-                        .map(|(_, _, c)| *c);
-                    if let Some(c) = color {
-                        bits |= bit;
-                        match votes.iter_mut().find(|v| v.0 == c) {
-                            Some(v) => v.1 += 1,
-                            None => votes.push((c, 1)),
-                        }
-                    }
+            for c in subs.iter().flatten() {
+                match votes.iter_mut().find(|v| v.0 == *c) {
+                    Some(v) => v.1 += 1,
+                    None => votes.push((*c, 1)),
                 }
             }
-            if let Some((color, _)) = votes.iter().max_by_key(|v| v.1) {
-                *cell = Some((braille(bits), *color));
-            }
+            let Some(&(fg, _)) = votes.iter().max_by_key(|v| v.1) else {
+                continue;
+            };
+            let empty = subs.iter().filter(|c| c.is_none()).count() as u32;
+            let other = votes
+                .iter()
+                .filter(|v| v.0 != fg)
+                .max_by_key(|v| v.1)
+                .copied();
+            // The background is the second color if there are more of it than empty ones; otherwise the terminal's.
+            let bg = other.filter(|o| o.1 > empty).map(|o| o.0);
+            let bits = subs
+                .iter()
+                .enumerate()
+                .filter(|(_, c)| **c == Some(fg))
+                .fold(0u8, |b, (i, _)| b | (1 << i));
+            *cell = Some((quadrant(bits), PieCell { fg, bg }));
         }
     }
     out
 }
 
-/// Filled area of a series (values 0..=1, most recent last, right-aligned).
-/// Returns the character and the row level (0 = base, 1 = tip) for coloring.
-pub fn area_cells(values: &[f64], width: u16, height: u16, invert: bool) -> CellGrid<f64> {
+/// Data for an area cell: `level` is the row position (0 = base, 1 = tip) used for
+/// coloring; `reversed` means the character must be drawn in reverse video (areas that
+/// grow from the top).
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct AreaCell {
+    pub level: f64,
+    pub reversed: bool,
+}
+
+/// Filled area of a series (values 0..=1, most recent last, right-aligned) with
+/// opaque vertical blocks of 8 levels per cell. One sample per column.
+pub fn area_cells(values: &[f64], width: u16, height: u16, invert: bool) -> CellGrid<AreaCell> {
     let (w, h) = (width as usize, height as usize);
-    let mut bits = vec![vec![0u8; w]; h];
-    let dots_h = h * 4;
-    let n = w * 2;
-    let start = values.len().saturating_sub(n);
+    let mut out = vec![vec![None; w]; h];
+    if w == 0 || h == 0 {
+        return out;
+    }
+    let start = values.len().saturating_sub(w);
     let shown = &values[start..];
-    let offset = n - shown.len();
+    let offset = w - shown.len();
     for (i, v) in shown.iter().enumerate() {
-        let x = offset + i;
-        let (col, dx) = (x / 2, x % 2);
-        let level = (v.clamp(0.0, 1.0) * dots_h as f64).round() as usize;
-        for k in 0..level {
-            let y = if invert { k } else { dots_h - 1 - k };
-            bits[y / 4][col] |= BITS[dx][y % 4];
+        let col = offset + i;
+        let v = if v.is_finite() {
+            v.clamp(0.0, 1.0)
+        } else {
+            0.0
+        };
+        let eighths = (v * (h * 8) as f64).round() as usize;
+        for k in 0..h {
+            let fill = eighths.saturating_sub(k * 8).min(8);
+            if fill == 0 {
+                break;
+            }
+            let row = if invert { k } else { h - 1 - k };
+            let level = (k as f64 + 0.5) / h as f64;
+            let (ch, reversed) = if fill == 8 {
+                ('█', false)
+            } else if invert {
+                // Inverted lower block: the top part ends up painted.
+                (BLOCKS[8 - fill], true)
+            } else {
+                (BLOCKS[fill], false)
+            };
+            out[row][col] = Some((ch, AreaCell { level, reversed }));
         }
     }
-    bits.iter()
-        .enumerate()
-        .map(|(row, r)| {
-            let lvl = if invert {
-                (row as f64 + 0.5) / h as f64
-            } else {
-                1.0 - (row as f64 + 0.5) / h as f64
-            };
-            r.iter()
-                .map(|b| (*b != 0).then(|| (braille(*b), lvl)))
-                .collect()
-        })
-        .collect()
+    out
 }
 
 pub const BLOCKS: [char; 9] = [' ', '▁', '▂', '▃', '▄', '▅', '▆', '▇', '█'];
@@ -126,28 +190,34 @@ pub fn hbar_line(fraction: f64, width: u16, fill: Color, empty: Color) -> Line<'
     ])
 }
 
-/// Pie/donut widget, centered and with circle proportion (width = 2 × height).
+/// Pie/donut widget, centered and circular for cells of aspect ratio `aspect`
+/// (height/width; see `Theme::cell_aspect`).
 pub struct Pie<'a> {
     pub segments: &'a [(f64, Color)],
     pub hole: f64,
     pub label: Option<(&'a str, Color)>,
+    pub aspect: f64,
 }
 
 impl Widget for Pie<'_> {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        if area.width < 2 || area.height == 0 {
+        let (w, h) = pie_size(area.width, area.height, self.aspect);
+        if w == 0 || h == 0 {
             return;
         }
-        let h = area.height.min(area.width / 2).max(1);
-        let w = (h * 2).min(area.width);
         let x0 = area.x + (area.width - w) / 2;
         let y0 = area.y + (area.height - h) / 2;
-        for (r, row) in pie_cells(w, h, self.segments, self.hole).iter().enumerate() {
+        for (r, row) in pie_cells(w, h, self.segments, self.hole, self.aspect)
+            .iter()
+            .enumerate()
+        {
             for (c, cell) in row.iter().enumerate() {
-                if let Some((ch, color)) = cell {
-                    buf[(x0 + c as u16, y0 + r as u16)]
-                        .set_char(*ch)
-                        .set_fg(*color);
+                if let Some((ch, pc)) = cell {
+                    let cell = &mut buf[(x0 + c as u16, y0 + r as u16)];
+                    cell.set_char(*ch).set_fg(pc.fg);
+                    if let Some(bg) = pc.bg {
+                        cell.set_bg(bg);
+                    }
                 }
             }
         }
@@ -187,14 +257,16 @@ impl Widget for Area<'_> {
             .enumerate()
         {
             for (c, cell) in row.iter().enumerate() {
-                if let Some((ch, level)) = cell {
+                if let Some((ch, ac)) = cell {
                     let color = match self.color {
                         AreaColor::Fixed(c) => c,
-                        AreaColor::Level => self.theme.level(*level),
+                        AreaColor::Level => self.theme.level(ac.level),
                     };
-                    buf[(area.x + c as u16, area.y + r as u16)]
-                        .set_char(*ch)
-                        .set_fg(color);
+                    let cell = &mut buf[(area.x + c as u16, area.y + r as u16)];
+                    cell.set_char(*ch).set_fg(color);
+                    if ac.reversed {
+                        cell.modifier.insert(Modifier::REVERSED);
+                    }
                 }
             }
         }

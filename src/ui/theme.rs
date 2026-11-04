@@ -28,6 +28,19 @@ pub struct Theme {
     pub palette: [Color; 6],
     pub temp_warm: f32,
     pub temp_hot: f32,
+    /// Height / width of a terminal cell in pixels (2.0 if unknown).
+    pub cell_aspect: f64,
+}
+
+/// Height/width ratio of a cell from the window size.
+/// Returns 2.0 if the terminal doesn't report pixels; the result stays within 1.0..=4.0.
+pub fn cell_aspect(cols: u16, rows: u16, px_w: u16, px_h: u16) -> f64 {
+    if cols == 0 || rows == 0 || px_w == 0 || px_h == 0 {
+        return 2.0;
+    }
+    let cell_w = px_w as f64 / cols as f64;
+    let cell_h = px_h as f64 / rows as f64;
+    (cell_h / cell_w).clamp(1.0, 4.0)
 }
 
 pub fn detect_truecolor(colorterm: Option<&str>) -> bool {
@@ -71,6 +84,7 @@ impl Theme {
             ],
             temp_warm,
             temp_hot,
+            cell_aspect: 2.0,
         }
     }
 

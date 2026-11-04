@@ -141,6 +141,7 @@ fn pie(f: &mut Frame, area: Rect, app: &App, theme: &Theme) {
             segments: &segments,
             hole: 0.0,
             label: None,
+            aspect: theme.cell_aspect,
         },
         pie_area,
     );
