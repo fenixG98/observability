@@ -53,7 +53,7 @@ fn out_of_range_values_are_rejected() {
 
 #[test]
 fn missing_file_gives_defaults_without_warning() {
-    let (c, w) = config::load(Path::new("/nonexistent/observability/config.toml"));
+    let (c, w) = config::load(Path::new("/nonexistent/obstui/config.toml"));
     assert_eq!(c, Config::default());
     assert!(w.is_none());
 }
@@ -79,7 +79,7 @@ fn example_config_equals_defaults() {
 #[test]
 fn default_path_ends_with_config_toml() {
     let p = config::default_path().expect("a config directory exists");
-    assert!(p.ends_with("observability/config.toml"));
+    assert!(p.ends_with("obstui/config.toml"));
 }
 
 #[test]

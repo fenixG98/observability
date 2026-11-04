@@ -18,7 +18,7 @@ fn width_u16(n: usize) -> u16 {
 
 pub fn tab_bar(f: &mut Frame, area: Rect, app: &App, theme: &Theme) {
     let mut spans = vec![Span::styled(
-        " observability ",
+        " obstui ",
         Style::new().fg(theme.accent).add_modifier(Modifier::BOLD),
     )];
     for (i, (tab, name)) in [(Tab::Dashboard, "Dashboard"), (Tab::Processes, "Processos")]

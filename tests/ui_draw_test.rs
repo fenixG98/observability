@@ -13,7 +13,7 @@ fn theme() -> Theme {
 fn full_screen_dashboard() {
     let app = sample_app(60);
     let text = render_text(122, 38, |f| ui::draw(f, &app, &theme()));
-    assert!(text.lines().next().unwrap().contains("observability"));
+    assert!(text.lines().next().unwrap().contains("obstui"));
     assert!(text.contains("HISTORIAL CPU · GPU"));
     assert!(text.lines().last().unwrap().contains("hjkl focus"));
 }

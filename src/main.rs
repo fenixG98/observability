@@ -18,9 +18,9 @@ fn help_text() -> String {
         |p| p.display().to_string(),
     );
     format!(
-        "observability — monitor de recursos en terminal
+        "obstui — monitor de recursos en terminal
 
-Ús: observability [--probe | --version | --help]
+Ús: obstui [--probe | --version | --help]
 
   (sense arguments)  obre la interfície
   --probe            imprimeix un diagnòstic (CPU, memòria, GPU, temperatures...) i surt
@@ -36,7 +36,7 @@ fn main() {
     let result = match std::env::args().nth(1).as_deref() {
         None => run_tui(),
         Some("--version") | Some("-V") => {
-            println!("observability {}", env!("CARGO_PKG_VERSION"));
+            println!("obstui {}", env!("CARGO_PKG_VERSION"));
             Ok(())
         }
         Some("--help") | Some("-h") => {

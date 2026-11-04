@@ -2,4 +2,4 @@
 source: tests/ui_chrome_test.rs
 expression: text
 ---
- observability  1 Dashboard   2 Processos                                        devhost · up 3d 4h · load 1.42 0.98 0.77
+ obstui  1 Dashboard   2 Processos                                               devhost · up 3d 4h · load 1.42 0.98 0.77

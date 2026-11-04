@@ -5,6 +5,11 @@ edition = "2024"
 rust-version = "1.88"
 description = "Local resource monitor for the terminal (Linux and macOS)"
 publish = false
+autobins = false
+
+[[bin]]
+name = "obstui"
+path = "src/main.rs"
 
 [dependencies]
 ratatui = "0.30"

@@ -38,8 +38,7 @@ fn gpu_panel_explains_missing_permission() {
     let mut app = sample_app(2);
     if let Avail::Ok(g) = &mut app.snapshot.gpus {
         g[0].util = Avail::Unavailable(
-            "cal permís per llegir la GPU Intel: sudo setcap cap_perfmon=ep /usr/bin/observability"
-                .into(),
+            "cal permís per llegir la GPU Intel: sudo setcap cap_perfmon=ep /usr/bin/obstui".into(),
         );
     }
     let text = render_text(122, 36, |f| dashboard::render(f, f.area(), &app, &theme()));

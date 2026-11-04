@@ -13,7 +13,7 @@ fn theme() -> Theme {
 fn tab_bar_shows_tabs_and_host() {
     let app = sample_app(1);
     let text = render_text(122, 1, |f| chrome::tab_bar(f, f.area(), &app, &theme()));
-    assert!(text.contains("observability"));
+    assert!(text.contains("obstui"));
     assert!(text.contains(" 1 Dashboard "));
     assert!(text.contains(" 2 Processos "));
     assert!(text.contains("devhost · up 3d 4h · load 1.42 0.98 0.77"));

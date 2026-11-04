@@ -55,11 +55,11 @@ mod intel {
 
     #[test]
     fn permission_errors_give_the_setcap_command() {
-        let exe = Path::new("/home/u/.cargo/bin/observability");
+        let exe = Path::new("/home/u/.cargo/bin/obstui");
         let e = std::io::Error::from_raw_os_error(libc::EACCES);
         let msg = open_error_reason(&e, exe);
         assert!(
-            msg.contains("sudo setcap cap_perfmon=ep /home/u/.cargo/bin/observability"),
+            msg.contains("sudo setcap cap_perfmon=ep /home/u/.cargo/bin/obstui"),
             "{msg}"
         );
         assert!(msg.contains("recompilar"));

@@ -166,9 +166,8 @@ pub fn load(path: &Path) -> (Config, Option<String>) {
     }
 }
 
-/// `~/.config/observability/config.toml` (Linux) or
-/// `~/Library/Application Support/observability/config.toml` (macOS).
+/// `~/.config/obstui/config.toml` (Linux) or
+/// `~/Library/Application Support/obstui/config.toml` (macOS).
 pub fn default_path() -> Option<PathBuf> {
-    directories::ProjectDirs::from("", "", "observability")
-        .map(|d| d.config_dir().join("config.toml"))
+    directories::ProjectDirs::from("", "", "obstui").map(|d| d.config_dir().join("config.toml"))
 }

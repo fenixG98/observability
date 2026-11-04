@@ -1,5 +1,5 @@
-# Copy this file to ~/.config/observability/config.toml (Linux)
-# or to ~/Library/Application Support/observability/config.toml (macOS).
+# Copy this file to ~/.config/obstui/config.toml (Linux)
+# or to ~/Library/Application Support/obstui/config.toml (macOS).
 # All keys are optional; missing ones take the default value.
 
 refresh_ms = 1000        # 100..=60000
