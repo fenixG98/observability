@@ -8,6 +8,7 @@ use ratatui::widgets::{Block, Paragraph, Wrap};
 
 use crate::app::{App, Panel};
 use crate::model::{Avail, GpuReading, MemKind, human_bytes, human_rate};
+use crate::ui::axes::{fit_series, short_rate, x_axis, y_axis};
 use crate::ui::braille::{Area, AreaColor, Pie, hbar_line, vbar_symbol};
 use crate::ui::theme::{Theme, truncate};
 
@@ -85,6 +86,24 @@ fn message(f: &mut Frame, area: Rect, block: Block<'static>, text: &str, theme: 
 }
 
 /// Writes dimmed `text` at the top-left corner of `area` (over the chart).
+/// Seconds per column so the time axis covers the whole history window: the
+/// left column is the oldest sample and the right one is «now».
+fn window_step(app: &App, capacity: usize, width: u16) -> f64 {
+    capacity as f64 * app.refresh.as_secs_f64() / f64::from(width.saturating_sub(1).max(1))
+}
+
+/// Labels 100 % / 50 % / 0 % for an axis of `h` rows (50 % only if it fits).
+fn percent_labels(h: u16) -> Vec<(u16, String)> {
+    let mut v = vec![(0, "100%".to_string())];
+    if h >= 5 {
+        v.push(((h - 1) / 2, "50%".into()));
+    }
+    if h >= 2 {
+        v.push((h - 1, "0%".into()));
+    }
+    v
+}
+
 fn corner_label(f: &mut Frame, area: Rect, text: &str, color: Color) {
     if area.width == 0 || area.height == 0 {
         return;
@@ -113,10 +132,16 @@ fn donut(f: &mut Frame, area: Rect, block: Block<'static>, d: Donut, theme: &The
     }
     let [pie_area, text] =
         Layout::vertical([Constraint::Fill(1), Constraint::Length(1)]).areas(inner);
-    let pie_w = (pie_area.height * 2).min(pie_area.width);
-    let pie_area = if !d.legend.is_empty() && pie_area.width >= pie_w + 26 {
-        let [p, legend] = Layout::horizontal([Constraint::Length(pie_w + 2), Constraint::Fill(1)])
-            .areas(pie_area);
+    // Actual circle width given the cell aspect ratio, and a fixed margin up to the legend.
+    const LEGEND_GAP: u16 = 4;
+    let pie_w = (f64::from(pie_area.height) * theme.cell_aspect).round() as u16;
+    let pie_area = if !d.legend.is_empty() && pie_area.width >= pie_w + LEGEND_GAP + 22 {
+        let [p, _, legend] = Layout::horizontal([
+            Constraint::Length(pie_w),
+            Constraint::Length(LEGEND_GAP),
+            Constraint::Fill(1),
+        ])
+        .areas(pie_area);
         let lines: Vec<Line> = d
             .legend
             .iter()
@@ -408,14 +433,27 @@ fn history(f: &mut Frame, area: Rect, app: &App, theme: &Theme, focused: bool) {
         return;
     }
     let bars_h = if inner.height >= 9 { 3 } else { 1 };
-    let [cpu_a, sep, gpu_a, bars] = Layout::vertical([
+    let axis_h = if inner.height >= 12 { 2 } else { 0 };
+    let [cpu_a, sep, gpu_a, time_a, bars] = Layout::vertical([
         Constraint::Fill(1),
         Constraint::Length(1),
         Constraint::Fill(1),
+        Constraint::Length(axis_h),
         Constraint::Length(bars_h),
     ])
     .areas(inner);
-    let cpu_vals = app.hist.cpu.values();
+    let cpu_a = y_axis(f.buffer_mut(), cpu_a, &percent_labels(cpu_a.height), theme);
+    let gpu_a = y_axis(f.buffer_mut(), gpu_a, &percent_labels(gpu_a.height), theme);
+    if axis_h > 0 {
+        x_axis(
+            f.buffer_mut(),
+            time_a,
+            gpu_a,
+            window_step(app, app.hist.cpu.capacity(), gpu_a.width),
+            theme,
+        );
+    }
+    let cpu_vals = fit_series(&app.hist.cpu.values(), app.hist.cpu.capacity(), cpu_a.width);
     f.render_widget(
         Area {
             values: &cpu_vals,
@@ -437,7 +475,7 @@ fn history(f: &mut Frame, area: Rect, app: &App, theme: &Theme, focused: bool) {
     );
     match (app.current_gpu(), app.hist.gpu.get(app.gpu_index)) {
         (Some(g), Some(h)) if g.util.ok().is_some() => {
-            let vals = h.values();
+            let vals = fit_series(&h.values(), h.capacity(), gpu_a.width);
             f.render_widget(
                 Area {
                     values: &vals,
@@ -507,14 +545,41 @@ fn net(f: &mut Frame, area: Rect, app: &App, theme: &Theme, focused: bool) {
     if inner.height < 2 || inner.width < 14 {
         return;
     }
+    let axis_h = if inner.height >= 8 { 2 } else { 0 };
+    let [body, time_a] =
+        Layout::vertical([Constraint::Fill(1), Constraint::Length(axis_h)]).areas(inner);
     let [labels, chart] =
-        Layout::horizontal([Constraint::Length(13), Constraint::Fill(1)]).areas(inner);
+        Layout::horizontal([Constraint::Length(13), Constraint::Fill(1)]).areas(body);
     let half = chart.height / 2;
+    let scale = app.hist.rx.max().max(app.hist.tx.max()).max(1.0);
+    // Mirror: download upward and upload downward, with 0 in the middle.
+    let top = format!("{:>4}", short_rate(scale));
+    let mut marks = vec![
+        (0, top.clone()),
+        (chart.height - half - 1, format!("{:>4}", 0)),
+    ];
+    if half > 0 {
+        marks.push((chart.height - 1, top));
+    }
+    let chart = y_axis(f.buffer_mut(), chart, &marks, theme);
+    if axis_h > 0 {
+        x_axis(
+            f.buffer_mut(),
+            time_a,
+            chart,
+            window_step(app, app.hist.rx.capacity(), chart.width),
+            theme,
+        );
+    }
     let up = Rect::new(chart.x, chart.y, chart.width, chart.height - half);
     let down = Rect::new(chart.x, chart.y + up.height, chart.width, half);
-    let scale = app.hist.rx.max().max(app.hist.tx.max()).max(1.0);
-    let rx: Vec<f64> = app.hist.rx.values().iter().map(|v| v / scale).collect();
-    let tx: Vec<f64> = app.hist.tx.values().iter().map(|v| v / scale).collect();
+    let fit = |h: &crate::history::History| -> Vec<f64> {
+        fit_series(&h.values(), h.capacity(), chart.width)
+            .iter()
+            .map(|v| v / scale)
+            .collect()
+    };
+    let (rx, tx) = (fit(&app.hist.rx), fit(&app.hist.tx));
     f.render_widget(
         Area {
             values: &rx,
@@ -548,15 +613,6 @@ fn net(f: &mut Frame, area: Rect, app: &App, theme: &Theme, focused: bool) {
         ))),
         Rect::new(labels.x, labels.y + labels.height - 1, labels.width, 1),
     );
-    if labels.height >= 4 {
-        f.render_widget(
-            Paragraph::new(Line::from(Span::styled(
-                format!("màx {}", human_rate(scale as u64)),
-                Style::new().fg(theme.dim),
-            ))),
-            Rect::new(labels.x, labels.y + 1, labels.width, 1),
-        );
-    }
 }
 
 fn disk_io(f: &mut Frame, area: Rect, app: &App, theme: &Theme, focused: bool) {
@@ -567,6 +623,9 @@ fn disk_io(f: &mut Frame, area: Rect, app: &App, theme: &Theme, focused: bool) {
     if inner.height < 2 || inner.width < 12 {
         return;
     }
+    let axis_h = if inner.height >= 8 { 2 } else { 0 };
+    let [inner, time_a] =
+        Layout::vertical([Constraint::Fill(1), Constraint::Length(axis_h)]).areas(inner);
     let half = inner.height / 2;
     let rows = [
         (
@@ -589,7 +648,24 @@ fn disk_io(f: &mut Frame, area: Rect, app: &App, theme: &Theme, focused: bool) {
             continue;
         }
         let scale = hist.max().max(1.0);
-        let vals: Vec<f64> = hist.values().iter().map(|v| v / scale).collect();
+        let marks = [
+            (0, format!("{:>4}", short_rate(scale))),
+            (rect.height - 1, format!("{:>4}", 0)),
+        ];
+        let rect = y_axis(f.buffer_mut(), rect, &marks, theme);
+        if axis_h > 0 && label == "escriure" {
+            x_axis(
+                f.buffer_mut(),
+                time_a,
+                rect,
+                window_step(app, hist.capacity(), rect.width),
+                theme,
+            );
+        }
+        let vals: Vec<f64> = fit_series(&hist.values(), hist.capacity(), rect.width)
+            .iter()
+            .map(|v| v / scale)
+            .collect();
         f.render_widget(
             Area {
                 values: &vals,

@@ -1,5 +1,6 @@
 //! Terminal interface: screen composition.
 
+pub mod axes;
 pub mod braille;
 pub mod chrome;
 pub mod compact;

@@ -8,6 +8,7 @@ use ratatui::widgets::{Cell, Paragraph, Row, Table, TableState, Wrap};
 
 use crate::app::{App, Panel};
 use crate::model::{human_bytes, human_duration};
+use crate::ui::axes::y_axis;
 use crate::ui::braille::{Area, AreaColor, Pie, hbar_line};
 use crate::ui::theme::{Theme, truncate};
 
@@ -134,8 +135,14 @@ fn pie(f: &mut Frame, area: Rect, app: &App, theme: &Theme) {
         .map(|((_, v), c)| (*v, *c))
         .collect();
     let legend_h = (shares.len() as u16).min(inner.height.saturating_sub(1));
-    let [pie_area, legend] =
-        Layout::vertical([Constraint::Fill(1), Constraint::Length(legend_h)]).areas(inner);
+    // One row of margin between the donut and the legend, if it fits.
+    let gap = u16::from(inner.height > legend_h + 4);
+    let [pie_area, _, legend] = Layout::vertical([
+        Constraint::Fill(1),
+        Constraint::Length(gap),
+        Constraint::Length(legend_h),
+    ])
+    .areas(inner);
     f.render_widget(
         Pie {
             segments: &segments,
@@ -192,6 +199,11 @@ fn detail(f: &mut Frame, area: Rect, app: &App, theme: &Theme) {
         && let Some(h) = app.hist.proc_cpu.get(&p.pid)
     {
         let scale = h.max().max(100.0);
+        let marks = [
+            (0, format!("{:>4}", format!("{scale:.0}%"))),
+            (chart.height - 1, format!("{:>4}", "0%")),
+        ];
+        let chart = y_axis(f.buffer_mut(), chart, &marks, theme);
         let vals: Vec<f64> = h.values().iter().map(|v| v / scale).collect();
         f.render_widget(
             Area {

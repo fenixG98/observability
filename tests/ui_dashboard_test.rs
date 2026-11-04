@@ -70,6 +70,37 @@ fn zoom_renders_only_the_focused_panel_with_legend() {
 }
 
 #[test]
+fn zoomed_legend_keeps_a_gap_from_the_donut() {
+    let mut app = sample_app(10);
+    app.focus = Panel::MemDonut;
+    app.zoomed = true;
+    for aspect in [2.0, 2.2, 2.5] {
+        let mut th = theme();
+        th.cell_aspect = aspect;
+        let text = render_text(122, 36, |f| dashboard::render(f, f.area(), &app, &th));
+        let rows: Vec<Vec<char>> = text.lines().map(|l| l.chars().collect()).collect();
+        let legend_x = rows
+            .iter()
+            .find_map(|r| r.iter().position(|c| *c == '■'))
+            .expect("legend");
+        // Rightmost column of the donut (quadrant blocks), on any row.
+        let pie_right = rows
+            .iter()
+            .filter_map(|r| {
+                r[..legend_x]
+                    .iter()
+                    .rposition(|c| "▘▝▀▖▌▞▛▗▚▐▜▄▙▟█".contains(*c))
+            })
+            .max()
+            .expect("donut");
+        assert!(
+            legend_x - pie_right >= 3,
+            "aspect {aspect}: donut up to column {pie_right}, legend at {legend_x}\n{text}"
+        );
+    }
+}
+
+#[test]
 fn short_model_strips_marketing() {
     assert_eq!(
         dashboard::short_model("Intel(R) Core(TM) Ultra 5 125H"),
@@ -99,4 +130,19 @@ fn tiny_terminals_do_not_panic() {
     render_text(20, 6, |f| compact::render(f, f.area(), &app, &theme()));
     render_text(3, 3, |f| dashboard::render(f, f.area(), &app, &theme()));
     render_text(10, 4, |f| dashboard::render(f, f.area(), &app, &theme()));
+}
+
+#[test]
+fn evolution_charts_have_scales_and_time_axis() {
+    let app = sample_app(60);
+    let text = render_text(122, 40, |f| dashboard::render(f, f.area(), &app, &theme()));
+    // History: percentage scale on CPU and GPU.
+    assert!(text.matches("100%┤").count() >= 2, "{text}");
+    assert!(text.contains(" 0%┤"), "{text}");
+    // Time axis: line with ticks and labels up to «ara» (history, network and disk).
+    assert!(text.matches('└').count() >= 3, "{text}");
+    assert!(text.matches("ara").count() >= 3, "{text}");
+    assert!(text.contains("-30s") || text.contains("-60s"), "{text}");
+    // Network and disk: scale with compact speed and the zero.
+    assert!(text.contains("   0┤"), "{text}");
 }
