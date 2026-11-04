@@ -8,4 +8,5 @@ pub mod gpu;
 pub mod history;
 pub mod keys;
 pub mod model;
+pub mod probe;
 pub mod ui;
