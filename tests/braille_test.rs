@@ -233,6 +233,8 @@ fn pie_widget_centers_label_and_is_round() {
         hole: 0.6,
         label: Some(("34%", theme.fg)),
         aspect: 2.2,
+        graphics: None,
+        cell_px: None,
     }
     .render(buf.area, &mut buf);
     let row: String = (0..40).map(|x| buf[(x, 5)].symbol().to_string()).collect();

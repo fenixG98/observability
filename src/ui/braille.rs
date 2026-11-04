@@ -8,6 +8,7 @@ use ratatui::{
     widgets::Widget,
 };
 
+use crate::ui::pixels::{Graphics, donut_rgba, pie_image_id};
 use crate::ui::theme::Theme;
 
 /// `[row][column]` grid of optional cells with associated data.
@@ -197,10 +198,30 @@ pub struct Pie<'a> {
     pub hole: f64,
     pub label: Option<(&'a str, Color)>,
     pub aspect: f64,
+    /// If present, the donut is drawn with pixels (antialiasing); otherwise with quadrants.
+    pub graphics: Option<Graphics>,
+    /// Cell size in pixels, needed for pixel drawing.
+    pub cell_px: Option<(u16, u16)>,
 }
 
 impl Widget for Pie<'_> {
     fn render(self, area: Rect, buf: &mut Buffer) {
+        if let (Some(g), Some((cw, ch))) = (self.graphics, self.cell_px)
+            && area.width > 0
+            && area.height > 0
+            && let Some(img) = donut_rgba(
+                u32::from(area.width) * u32::from(cw),
+                u32::from(area.height) * u32::from(ch),
+                self.segments,
+                self.hole,
+            )
+        {
+            let label = self
+                .label
+                .map(|(t, c)| (t, Style::new().fg(c).add_modifier(Modifier::BOLD)));
+            g.render_labeled(img, pie_image_id(area), area, buf, label);
+            return;
+        }
         let (w, h) = pie_size(area.width, area.height, self.aspect);
         if w == 0 || h == 0 {
             return;

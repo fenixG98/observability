@@ -30,6 +30,10 @@ pub struct Theme {
     pub temp_hot: f32,
     /// Height / width of a terminal cell in pixels (2.0 if unknown).
     pub cell_aspect: f64,
+    /// Cell size in pixels (width, height), if the terminal provides it.
+    pub cell_px: Option<(u16, u16)>,
+    /// Terminal graphics protocol for drawing donuts with pixels.
+    pub graphics: Option<crate::ui::pixels::Graphics>,
 }
 
 /// Height/width ratio of a cell from the window size.
@@ -85,6 +89,8 @@ impl Theme {
             temp_warm,
             temp_hot,
             cell_aspect: 2.0,
+            cell_px: None,
+            graphics: None,
         }
     }
 

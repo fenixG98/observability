@@ -147,6 +147,8 @@ fn donut(f: &mut Frame, area: Rect, block: Block<'static>, d: Donut, theme: &The
             hole: 0.6,
             label: Some((&d.center, theme.fg)),
             aspect: theme.cell_aspect,
+            graphics: theme.graphics,
+            cell_px: theme.cell_px,
         },
         pie_area,
     );

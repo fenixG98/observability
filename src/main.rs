@@ -10,6 +10,7 @@ use observability::keys::{Dispatcher, KeyMap};
 use observability::model::Snapshot;
 use observability::ui::{
     self,
+    pixels::Graphics,
     theme::{Theme, cell_aspect, detect_truecolor},
 };
 use observability::{gpu, probe};
@@ -100,7 +101,8 @@ fn run_tui() -> io::Result<()> {
             return Err(e);
         }
     };
-    theme.cell_aspect = detect_cell_aspect();
+    theme.graphics = Graphics::detect();
+    update_cell_metrics(&mut theme);
     let result = event_loop(&mut terminal, &mut app, &mut disp, &mut theme, &ctl, &rx);
     ratatui::restore();
     ctl.stop();
@@ -156,7 +158,7 @@ fn event_loop(
             }
             Event::Resize(..) => {
                 // A font size change also arrives as Resize.
-                theme.cell_aspect = detect_cell_aspect();
+                update_cell_metrics(theme);
                 dirty = true;
             }
             _ => {}
@@ -164,10 +166,24 @@ fn event_loop(
     }
 }
 
-/// Aspect ratio of the current terminal cell (2.0 if it does not report pixels).
-fn detect_cell_aspect() -> f64 {
-    match ratatui::crossterm::terminal::window_size() {
-        Ok(ws) => cell_aspect(ws.columns, ws.rows, ws.width, ws.height),
-        Err(_) => 2.0,
+/// Size and aspect ratio of the current terminal cell. Prefers the real window size
+/// (it changes with font zoom); if the terminal does not give it, the one reported by the
+/// graphics protocol; and if neither, ratio 2.0 and no pixels (donuts are drawn with text).
+fn update_cell_metrics(theme: &mut Theme) {
+    let ws = ratatui::crossterm::terminal::window_size()
+        .ok()
+        .filter(|w| w.columns > 0 && w.rows > 0 && w.width > 0 && w.height > 0);
+    if let Some(w) = ws {
+        theme.cell_aspect = cell_aspect(w.columns, w.rows, w.width, w.height);
+        theme.cell_px = Some((w.width / w.columns, w.height / w.rows));
+    } else if let Some((fw, fh)) = theme.graphics.map(|g| g.font_size())
+        && fw > 0
+        && fh > 0
+    {
+        theme.cell_aspect = cell_aspect(1, 1, fw, fh);
+        theme.cell_px = Some((fw, fh));
+    } else {
+        theme.cell_aspect = 2.0;
+        theme.cell_px = None;
     }
 }
