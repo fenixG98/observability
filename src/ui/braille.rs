@@ -204,22 +204,53 @@ pub struct Pie<'a> {
     pub cell_px: Option<(u16, u16)>,
 }
 
+/// Summary of everything that determines a donut's image. Fractions are rounded to the
+/// thousandth: a smaller change would not be visible and isn't worth retransmitting the image.
+fn pie_key(area: Rect, cell_px: (u16, u16), segments: &[(f64, Color)], hole: f64) -> Vec<u64> {
+    let mut key = vec![
+        u64::from(area.x),
+        u64::from(area.y),
+        u64::from(area.width),
+        u64::from(area.height),
+        u64::from(cell_px.0),
+        u64::from(cell_px.1),
+        hole.to_bits(),
+    ];
+    for (f, c) in segments {
+        key.push((f.max(0.0) * 1000.0).round() as u64);
+        key.push(match c {
+            Color::Rgb(r, g, b) => u64::from_be_bytes([0, 0, 0, 0, 0, *r, *g, *b]),
+            // Without RGB no image is generated (drawn with text) and nothing is stored.
+            _ => 0,
+        });
+    }
+    key
+}
+
 impl Widget for Pie<'_> {
     fn render(self, area: Rect, buf: &mut Buffer) {
         if let (Some(g), Some((cw, ch))) = (self.graphics, self.cell_px)
             && area.width > 0
             && area.height > 0
-            && let Some(img) = donut_rgba(
-                u32::from(area.width) * u32::from(cw),
-                u32::from(area.height) * u32::from(ch),
-                self.segments,
-                self.hole,
+            && g.render_cached(
+                pie_image_id(area),
+                pie_key(area, (cw, ch), self.segments, self.hole),
+                area,
+                buf,
+                || {
+                    donut_rgba(
+                        u32::from(area.width) * u32::from(cw),
+                        u32::from(area.height) * u32::from(ch),
+                        self.segments,
+                        self.hole,
+                    )
+                },
             )
         {
             let label = self
                 .label
                 .map(|(t, c)| (t, Style::new().fg(c).add_modifier(Modifier::BOLD)));
-            g.render_labeled(img, pie_image_id(area), area, buf, label);
+            g.draw_label(area, buf, label);
             return;
         }
         let (w, h) = pie_size(area.width, area.height, self.aspect);

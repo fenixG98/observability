@@ -1,5 +1,6 @@
 use std::io;
-use std::sync::mpsc::{Receiver, TryRecvError};
+use std::sync::mpsc::{self, Receiver};
+use std::thread;
 use std::time::Duration;
 
 use observability::app::{App, Effect};
@@ -103,10 +104,52 @@ fn run_tui() -> io::Result<()> {
     };
     theme.graphics = Graphics::detect();
     update_cell_metrics(&mut theme);
-    let result = event_loop(&mut terminal, &mut app, &mut disp, &mut theme, &ctl, &rx);
+    let events = merge_events(rx);
+    let result = event_loop(
+        &mut terminal,
+        &mut app,
+        &mut disp,
+        &mut theme,
+        &ctl,
+        &events,
+    );
     ratatui::restore();
     ctl.stop();
     result
+}
+
+/// Everything that can advance the interface, on a single channel.
+enum Msg {
+    Snapshot(Box<Snapshot>),
+    Input(io::Result<Event>),
+    CollectorGone,
+}
+
+/// Threads that block on the keyboard and on samples and forward them to a single channel: the main
+/// loop sleeps until there is something to do (no periodic wakeups).
+fn merge_events(snapshots: Receiver<Snapshot>) -> Receiver<Msg> {
+    let (tx, rx) = mpsc::channel();
+    let tx_input = tx.clone();
+    let _ = thread::Builder::new()
+        .name("snapshots".into())
+        .spawn(move || {
+            for s in snapshots {
+                if tx.send(Msg::Snapshot(Box::new(s))).is_err() {
+                    return;
+                }
+            }
+            let _ = tx.send(Msg::CollectorGone);
+        });
+    let _ = thread::Builder::new().name("input".into()).spawn(move || {
+        loop {
+            let e = event::read();
+            let failed = e.is_err();
+            if tx_input.send(Msg::Input(e)).is_err() || failed {
+                return;
+            }
+        }
+    });
+    rx
 }
 
 fn event_loop(
@@ -115,55 +158,74 @@ fn event_loop(
     disp: &mut Dispatcher,
     theme: &mut Theme,
     ctl: &Control,
-    rx: &Receiver<Snapshot>,
+    rx: &Receiver<Msg>,
 ) -> io::Result<()> {
-    let mut dirty = true;
+    terminal.draw(|f| ui::draw(f, app, &*theme))?;
     loop {
-        loop {
-            match rx.try_recv() {
-                Ok(s) => {
-                    app.on_snapshot(s);
-                    dirty = true;
-                }
-                Err(TryRecvError::Empty) => break,
-                Err(TryRecvError::Disconnected) => {
-                    return Err(io::Error::other("the collector thread stopped"));
-                }
+        let Ok(first) = rx.recv() else {
+            return Err(io::Error::other("the collector thread stopped"));
+        };
+        // Everything that has arrived is processed and drawn in a single pass.
+        for msg in std::iter::once(first).chain(rx.try_iter()) {
+            if handle(msg, app, disp, theme, ctl)? {
+                return Ok(());
             }
         }
-        if dirty {
-            terminal.draw(|f| ui::draw(f, app, &*theme))?;
-            dirty = false;
-        }
-        if !event::poll(Duration::from_millis(100))? {
-            continue;
-        }
-        match event::read()? {
-            Event::Key(k) if k.kind == KeyEventKind::Press => {
-                dirty = true;
-                for effect in app.on_key(&k, disp) {
-                    match effect {
-                        Effect::Quit => return Ok(()),
-                        Effect::Kill(pid) => {
-                            app.status = Some(match collect::kill_process(pid) {
-                                Ok(()) => format!("SIGTERM enviat a {pid}"),
-                                Err(e) => format!("could not kill {pid}: {e}"),
-                            });
-                        }
-                        Effect::SetRefresh(d) => ctl.set_interval(d),
-                        Effect::SetNetIface(i) => ctl.set_net_iface(i),
-                        Effect::SetProcessesVisible(v) => ctl.set_procs_visible(v),
-                    }
-                }
-            }
-            Event::Resize(..) => {
-                // A font size change also arrives as Resize.
-                update_cell_metrics(theme);
-                dirty = true;
-            }
-            _ => {}
-        }
+        terminal.draw(|f| ui::draw(f, app, &*theme))?;
     }
+}
+
+/// Applies a message to the state. Returns `true` if it is time to quit.
+fn handle(
+    msg: Msg,
+    app: &mut App,
+    disp: &mut Dispatcher,
+    theme: &mut Theme,
+    ctl: &Control,
+) -> io::Result<bool> {
+    let event = match msg {
+        Msg::Snapshot(s) => {
+            app.on_snapshot(*s);
+            return Ok(false);
+        }
+        Msg::CollectorGone => return Err(io::Error::other("the collector thread stopped")),
+        Msg::Input(e) => e?,
+    };
+    match event {
+        Event::Key(k) if k.kind == KeyEventKind::Press => {
+            let before = (app.tab, app.zoomed);
+            let effects = app.on_key(&k, disp);
+            // With another tab the terminal may have discarded the images.
+            if (app.tab, app.zoomed) != before
+                && let Some(g) = theme.graphics
+            {
+                g.invalidate();
+            }
+            for effect in effects {
+                match effect {
+                    Effect::Quit => return Ok(true),
+                    Effect::Kill(pid) => {
+                        app.status = Some(match collect::kill_process(pid) {
+                            Ok(()) => format!("SIGTERM sent to {pid}"),
+                            Err(e) => format!("could not kill {pid}: {e}"),
+                        });
+                    }
+                    Effect::SetRefresh(d) => ctl.set_interval(d),
+                    Effect::SetNetIface(i) => ctl.set_net_iface(i),
+                    Effect::SetProcessesVisible(v) => ctl.set_procs_visible(v),
+                }
+            }
+        }
+        Event::Resize(..) => {
+            // A font size change also arrives as Resize.
+            update_cell_metrics(theme);
+            if let Some(g) = theme.graphics {
+                g.invalidate();
+            }
+        }
+        _ => {}
+    }
+    Ok(false)
 }
 
 /// Size and aspect ratio of the current terminal cell. Prefers the real window size

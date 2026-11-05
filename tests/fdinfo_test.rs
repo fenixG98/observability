@@ -94,3 +94,33 @@ fn scans_only_drm_fds_of_numeric_pids() {
     assert_eq!(found[0].0, 123);
     std::fs::remove_dir_all(&root).unwrap();
 }
+
+#[cfg(unix)]
+#[test]
+fn scanner_rereads_known_drm_fds_and_rescans_periodically() {
+    use observability::gpu::fdinfo::DrmScanner;
+    use std::os::unix::fs::symlink;
+    use std::time::Duration;
+    let root = std::env::temp_dir().join(format!("obs-proc-scan-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&root);
+    for pid in ["123", "200"] {
+        std::fs::create_dir_all(root.join(pid).join("fd")).unwrap();
+        std::fs::create_dir_all(root.join(pid).join("fdinfo")).unwrap();
+    }
+    symlink("/dev/dri/renderD128", root.join("123/fd/3")).unwrap();
+    std::fs::write(root.join("123/fdinfo/3"), I915).unwrap();
+
+    let mut s = DrmScanner::default();
+    assert_eq!(s.scan(&root, Duration::from_secs(3600)).len(), 1);
+    // A new client is not seen until the next full scan...
+    symlink("/dev/dri/renderD128", root.join("200/fd/7")).unwrap();
+    std::fs::write(root.join("200/fdinfo/7"), I915).unwrap();
+    assert_eq!(s.scan(&root, Duration::from_secs(3600)).len(), 1);
+    // ...and a closed fd disappears without waiting for it.
+    std::fs::remove_file(root.join("123/fdinfo/3")).unwrap();
+    assert_eq!(s.scan(&root, Duration::from_secs(3600)).len(), 0);
+    let found = s.scan(&root, Duration::ZERO);
+    assert_eq!(found.len(), 1);
+    assert_eq!(found[0].0, 200);
+    std::fs::remove_dir_all(&root).unwrap();
+}

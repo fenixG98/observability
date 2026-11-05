@@ -1,6 +1,9 @@
 //! Pixel graphics (Kitty protocol or Sixel) for the donuts: real antialiasing instead
 //! of text blocks. Only enabled when the terminal advertises a graphics protocol.
 
+use std::collections::HashMap;
+use std::sync::Mutex;
+
 use image::{DynamicImage, RgbaImage};
 use ratatui::{
     buffer::Buffer,
@@ -18,6 +21,15 @@ use ratatui_image::{
 #[derive(Clone, Copy)]
 pub struct Graphics {
     picker: &'static Picker,
+    /// Last encoded image for each id. If an image doesn't change, the
+    /// protocol is reused: it isn't rasterized or encoded again, and with Kitty it isn't retransmitted (the
+    /// terminal already has it and only the placeholders need to be written).
+    cache: &'static Mutex<HashMap<u32, Cached>>,
+}
+
+struct Cached {
+    key: Vec<u64>,
+    protocol: Protocol,
 }
 
 impl Graphics {
@@ -25,7 +37,43 @@ impl Graphics {
     pub fn new(picker: Picker) -> Graphics {
         Graphics {
             picker: Box::leak(Box::new(picker)),
+            cache: Box::leak(Box::new(Mutex::new(HashMap::new()))),
         }
+    }
+
+    /// Forgets images already sent: next time they are transmitted again. Must be done
+    /// when the terminal may have lost them (resize, tab change).
+    pub fn invalidate(&self) {
+        if let Ok(mut c) = self.cache.lock() {
+            c.clear();
+        }
+    }
+
+    /// Draws image `id` in `area`. `key` summarizes everything that determines the image: if it is
+    /// the same as last time, it is reused; otherwise `make` generates the new one.
+    pub fn render_cached(
+        &self,
+        id: u32,
+        key: Vec<u64>,
+        area: Rect,
+        buf: &mut Buffer,
+        make: impl FnOnce() -> Option<RgbaImage>,
+    ) -> bool {
+        let Ok(mut cache) = self.cache.lock() else {
+            return false;
+        };
+        if let Some(c) = cache.get(&id)
+            && c.key == key
+        {
+            Image::new(&c.protocol).render(area, buf);
+            return true;
+        }
+        let Some(protocol) = make().and_then(|img| self.protocol(img, id, area)) else {
+            return false;
+        };
+        Image::new(&protocol).render(area, buf);
+        cache.insert(id, Cached { key, protocol });
+        true
     }
 
     /// Asks the terminal which graphics protocol it supports. Must be called with the terminal already in
@@ -44,14 +92,24 @@ impl Graphics {
     /// Draws `img` occupying exactly `area`. `id` identifies the image in the terminal: with the
     /// same id, the new image replaces the previous one instead of piling up in memory.
     pub fn render(&self, img: RgbaImage, id: u32, area: Rect, buf: &mut Buffer) {
+        if let Some(p) = self.protocol(img, id, area) {
+            Image::new(&p).render(area, buf);
+        }
+    }
+
+    fn protocol(&self, img: RgbaImage, id: u32, area: Rect) -> Option<Protocol> {
         let size = Size::new(area.width, area.height);
         let image = DynamicImage::ImageRgba8(img);
-        let protocol = match self.picker.protocol_type() {
+        match self.picker.protocol_type() {
             ProtocolType::Kitty => {
                 let compress = self
                     .picker
                     .capabilities()
-                    .contains(&Capability::KittyCompression);
+                    .contains(&Capability::KittyCompression)
+                    || kitty_zlib_known(
+                        std::env::var("TERM").ok().as_deref(),
+                        std::env::var("TERM_PROGRAM").ok().as_deref(),
+                    );
                 Kitty::new(image, size, id, self.picker.tmux_detected(), compress)
                     .map(Protocol::Kitty)
                     .ok()
@@ -60,9 +118,6 @@ impl Graphics {
                 .picker
                 .new_protocol(image, size, Resize::Fit(None))
                 .ok(),
-        };
-        if let Some(p) = protocol {
-            Image::new(&p).render(area, buf);
         }
     }
 
@@ -76,6 +131,11 @@ impl Graphics {
         label: Option<(&str, Style)>,
     ) {
         self.render(img, id, area, buf);
+        self.draw_label(area, buf, label);
+    }
+
+    /// Writes centered text over an image already drawn in `area`.
+    pub fn draw_label(&self, area: Rect, buf: &mut Buffer, label: Option<(&str, Style)>) {
         let Some((text, style)) = label else { return };
         let tw = text.chars().count() as u16;
         let (lx, ly) = (
@@ -110,6 +170,14 @@ fn relocate_kitty_cell(buf: &mut Buffer, area: Rect, x: u16, y: u16) {
 }
 
 const KITTY_PLACEHOLDER: char = '\u{10EEEE}';
+
+/// Terminals that accept zlib-compressed images (`o=z`) even if they don't say so in the
+/// capabilities query. Compressed, a donut's images (flat colors) take up about
+/// fifty times less: it's what offloads the terminal most on each update.
+pub fn kitty_zlib_known(term: Option<&str>, term_program: Option<&str>) -> bool {
+    matches!(term, Some("xterm-kitty" | "xterm-ghostty"))
+        || matches!(term_program, Some("ghostty" | "kitty"))
+}
 
 /// Diacritic that encodes `n` in Kitty placeholders. The table is private to ratatui-image,
 /// so it is obtained by drawing an empty image of one column and `n + 1` rows: the cell of

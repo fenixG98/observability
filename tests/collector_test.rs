@@ -89,3 +89,32 @@ fn system_source_smoke() {
     let me = std::process::id();
     assert!(s.procs.unwrap().iter().any(|p| p.pid == me));
 }
+
+#[test]
+fn collector_wakes_at_once_on_stop_and_interval_change() {
+    // Long interval: the thread does not wake on its own, but must react immediately to changes.
+    let ctl = Control::new(Duration::from_secs(30), None);
+    let rx = spawn(ctl.clone(), || Fake { n: 0 });
+    rx.recv_timeout(Duration::from_secs(2)).unwrap();
+    let t = Instant::now();
+    ctl.set_interval(Duration::from_millis(20));
+    rx.recv_timeout(Duration::from_secs(2)).unwrap();
+    assert!(
+        t.elapsed() < Duration::from_millis(500),
+        "{:?}",
+        t.elapsed()
+    );
+    ctl.set_interval(Duration::from_secs(30));
+    std::thread::sleep(Duration::from_millis(100));
+    let t = Instant::now();
+    ctl.stop();
+    assert!(matches!(
+        rx.recv_timeout(Duration::from_secs(2)),
+        Err(RecvTimeoutError::Disconnected)
+    ));
+    assert!(
+        t.elapsed() < Duration::from_millis(500),
+        "{:?}",
+        t.elapsed()
+    );
+}

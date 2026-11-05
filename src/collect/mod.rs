@@ -2,11 +2,12 @@
 
 pub mod meminfo;
 pub mod netfilter;
+pub mod procfs;
 pub mod system;
 pub mod temps;
 
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
-use std::sync::{Arc, Mutex, mpsc};
+use std::sync::{Arc, Condvar, Mutex, mpsc};
 use std::thread;
 use std::time::{Duration, Instant};
 
@@ -19,6 +20,9 @@ pub struct Control {
     procs_visible: AtomicBool,
     stop: AtomicBool,
     net_iface: Mutex<Option<String>>,
+    /// Wakes the collector thread when the interval changes or it is stopped (no polling).
+    wake: Condvar,
+    wake_lock: Mutex<()>,
 }
 
 impl Control {
@@ -28,6 +32,8 @@ impl Control {
             procs_visible: AtomicBool::new(false),
             stop: AtomicBool::new(false),
             net_iface: Mutex::new(net_iface),
+            wake: Condvar::new(),
+            wake_lock: Mutex::new(()),
         })
     }
 
@@ -38,6 +44,7 @@ impl Control {
     pub fn set_interval(&self, d: Duration) {
         self.interval_ms
             .store(d.as_millis() as u64, Ordering::Relaxed);
+        self.notify();
     }
 
     pub fn procs_visible(&self) -> bool {
@@ -60,6 +67,31 @@ impl Control {
 
     pub fn stop(&self) {
         self.stop.store(true, Ordering::Relaxed);
+        self.notify();
+    }
+
+    fn notify(&self) {
+        let _guard = self.wake_lock.lock();
+        self.wake.notify_all();
+    }
+
+    /// Waits until the interval has elapsed since `since` or until the thread is stopped.
+    /// Re-reads the interval on every wakeup, so a change takes effect right away.
+    fn sleep_until_next(&self, since: Instant) {
+        let Ok(mut guard) = self.wake_lock.lock() else {
+            return;
+        };
+        loop {
+            let elapsed = since.elapsed();
+            let interval = self.interval();
+            if self.stopped() || elapsed >= interval {
+                return;
+            }
+            match self.wake.wait_timeout(guard, interval - elapsed) {
+                Ok((g, _)) => guard = g,
+                Err(_) => return,
+            }
+        }
     }
 
     pub fn stopped(&self) -> bool {
@@ -90,10 +122,7 @@ where
                 if tx.send(source.sample(&ctl)).is_err() {
                     break;
                 }
-                let start = Instant::now();
-                while !ctl.stopped() && start.elapsed() < ctl.interval() {
-                    thread::sleep(Duration::from_millis(50).min(ctl.interval()));
-                }
+                ctl.sleep_until_next(Instant::now());
             }
         });
     rx
@@ -107,7 +136,7 @@ pub fn kill_process(pid: u32) -> Result<(), String> {
         return Err(format!("invalid pid: {pid}"));
     }
     if pid == 1 {
-        return Err("pid 1 (init) protegit".into());
+        return Err("pid 1 (init) is protected".into());
     }
     if pid == std::process::id() {
         return Err("refusing to kill obstui itself".into());

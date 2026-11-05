@@ -121,3 +121,47 @@ fn pie_without_graphics_uses_text_blocks() {
     let all: String = buf.content.iter().map(|c| c.symbol()).collect();
     assert!(all.contains('█') && !all.contains("\x1b_G"));
 }
+
+fn render_pie(g: Graphics, cpu: f64) -> String {
+    let mut buf = Buffer::empty(Rect::new(0, 0, 40, 10));
+    Pie {
+        segments: &[(cpu, RED), (1.0 - cpu, BLUE)],
+        hole: 0.6,
+        label: Some(("34%", Color::White)),
+        aspect: 2.0,
+        graphics: Some(g),
+        cell_px: Some((10, 20)),
+    }
+    .render(buf.area, &mut buf);
+    buf.content.iter().map(|c| c.symbol()).collect()
+}
+
+#[test]
+fn unchanged_donut_is_not_transmitted_again() {
+    let g = kitty_graphics();
+    assert!(render_pie(g, 0.34).contains("\x1b_G"), "first transmission");
+    let again = render_pie(g, 0.34);
+    assert!(
+        !again.contains("\x1b_G"),
+        "the image is already in the terminal"
+    );
+    assert!(
+        again.contains('\u{10EEEE}'),
+        "but the placeholders are there"
+    );
+    // An invisible change (less than a thousandth) is not retransmitted either.
+    assert!(!render_pie(g, 0.3402).contains("\x1b_G"));
+    assert!(render_pie(g, 0.40).contains("\x1b_G"), "visible change");
+    g.invalidate();
+    assert!(render_pie(g, 0.40).contains("\x1b_G"), "after invalidation");
+}
+
+#[test]
+fn zlib_is_used_on_terminals_known_to_support_it() {
+    use observability::ui::pixels::kitty_zlib_known;
+    assert!(kitty_zlib_known(Some("xterm-ghostty"), None));
+    assert!(kitty_zlib_known(Some("xterm-256color"), Some("ghostty")));
+    assert!(kitty_zlib_known(Some("xterm-kitty"), None));
+    assert!(!kitty_zlib_known(Some("xterm-256color"), Some("WezTerm")));
+    assert!(!kitty_zlib_known(None, None));
+}
