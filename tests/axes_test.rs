@@ -62,6 +62,33 @@ fn x_axis_on_narrow_chart_keeps_only_the_ends() {
 }
 
 #[test]
+fn x_axis_ticks_land_on_round_times_at_any_width() {
+    // 60 s window with widths that do not divide evenly: the labels must be
+    // always the same round figures, not «-16s» or «-31s» from column rounding.
+    let theme = Theme::new(true, 60.0, 80.0);
+    for w in [23u16, 41, 58, 63, 77] {
+        let area = Rect::new(0, 0, w + 6, 2);
+        let mut buf = Buffer::empty(area);
+        x_axis(
+            &mut buf,
+            area,
+            Rect::new(4, 0, w, 1),
+            60.0 / f64::from(w - 1),
+            &theme,
+        );
+        let labels = row(&buf, 1);
+        let expected: &[&str] = if w >= 40 {
+            &["-60s", "-45s", "-30s", "-15s", "ara"]
+        } else {
+            &["-60s", "-30s", "ara"]
+        };
+        for l in expected {
+            assert!(labels.contains(l), "width {w}: missing {l} in «{labels}»");
+        }
+    }
+}
+
+#[test]
 fn time_labels() {
     assert_eq!(time_label(0.0), "ara");
     assert_eq!(time_label(45.0), "-45s");

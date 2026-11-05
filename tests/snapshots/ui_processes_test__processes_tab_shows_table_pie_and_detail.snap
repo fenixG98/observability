@@ -1,34 +1,35 @@
 ---
 source: tests/ui_processes_test.rs
+assertion_line: 35
 expression: text
 ---
 ╭ PROCESSOS ──────────────────────────────────────── 5 · ordre: cpu · filtre: – ╮╭ QUI GASTA LA CPU ────────────── top 4 ╮
-│    PID NOM                            USUARI      CPU%               MEM  GPU%││              ▄▄██▐███▄▄               │
-│   4412 firefox                        alice       12.8 ■■■■■■■■■■   1.8G    6%││            ▄▄████▙██████▄             │
-│   9921 rust-analyzer                  alice        8.1 ■■■■■■■■■■   2.3G     –││          ▗████▄███████████▖           │
-│   1203 ghostty                        alice        3.9 ■■■■■■■■■■   210M    2%││          ▟█████▙▜█████████▙           │
-│    822 kwin_x11                       alice        3.1 ■■■■■■■■■■   340M   11%││          ▄▄▄▄▄▄▄▄▄█████████           │
-│      1 systemd                        alice        0.2 ■■■■■■■■■■    14M     –││          ▜████████▐███████▛           │
+│     PID NOM                          USUARI      CPU%               MEM  GPU% ││              ▄▄██▐███▄▄               │
+│    4412 firefox                      alice       12.8 ■■■■■■■■■■   1.8G    6% ││            ▄▄████▙██████▄             │
+│    9921 rust-analyzer                alice        8.1 ■■■■■■■■■■   2.3G     – ││          ▗████▄███████████▖           │
+│    1203 ghostty                      alice        3.9 ■■■■■■■■■■   210M    2% ││          ▟█████▙▜█████████▙           │
+│     822 kwin_x11                     alice        3.1 ■■■■■■■■■■   340M   11% ││          ▄▄▄▄▄▄▄▄▄█████████           │
+│       1 systemd                      alice        0.2 ■■■■■■■■■■    14M     – ││          ▜████████▐███████▛           │
 │                                                                               ││          ▝█████████▜██████▘           │
 │                                                                               ││            ▀███████▙████▀             │
 │                                                                               ││              ▀▀█████▜▀▀               │
 │                                                                               ││                                       │
-│                                                                               ││ ■ firefox           46%               │
-│                                                                               ││ ■ rust-analyzer     29%               │
-│                                                                               ││ ■ ghostty           14%               │
-│                                                                               ││ ■ kwin_x11          11%               │
-│                                                                               ││ ■ altres             1%               │
+│                                                                               ││       ■ firefox           46%         │
+│                                                                               ││       ■ rust-analyzer     29%         │
+│                                                                               ││       ■ ghostty           14%         │
+│                                                                               ││       ■ kwin_x11          11%         │
+│                                                                               ││       ■ altres             1%         │
 │                                                                               │╰───────────────────────────────────────╯
 │                                                                               │╭ rust-analyzer · 9921 ─────────────────╮
-│                                                                               ││100%┤                                  │
-│                                                                               ││  0%┤                                 ▁│
-│                                                                               ││cpu 8.1%   mem 2.3G   gpu –            │
-│                                                                               ││usuari alice                           │
-│                                                                               ││en marxa fa 3h 12m                     │
-│                                                                               ││fils 4                                 │
-│                                                                               ││/usr/bin/rust-analyzer                 │
-│                                                                               ││x matar                                │
+│                                                                               ││ 100%┤                                 │
+│                                                                               ││   0%┤                               ▁ │
 │                                                                               ││                                       │
+│                                                                               ││ cpu 8.1%   mem 2.3G   gpu –           │
+│                                                                               ││ usuari alice                          │
+│                                                                               ││ en marxa fa 3h 12m                    │
+│                                                                               ││ fils 4                                │
+│                                                                               ││ /usr/bin/rust-analyzer                │
+│                                                                               ││ x matar                               │
 │                                                                               ││                                       │
 │                                                                               ││                                       │
 ╰ j/k moure · x matar · / filtrar · :sort ──────────────────────────────────────╯╰───────────────────────────────────────╯

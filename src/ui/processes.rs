@@ -159,7 +159,7 @@ fn pie(f: &mut Frame, area: Rect, app: &App, theme: &Theme) {
         .zip(&colors)
         .map(|((name, v), c)| {
             Line::from(vec![
-                Span::styled(" ■ ", Style::new().fg(*c)),
+                Span::styled("■ ", Style::new().fg(*c)),
                 Span::styled(
                     format!("{:<16}", truncate(name, 15)),
                     Style::new().fg(theme.fg),
@@ -168,6 +168,14 @@ fn pie(f: &mut Frame, area: Rect, app: &App, theme: &Theme) {
             ])
         })
         .collect();
+    // The legend (■ + 16-char name + percentage) is centered under the pie.
+    let lw = legend.width.min(24);
+    let legend = Rect::new(
+        legend.x + (legend.width - lw) / 2,
+        legend.y,
+        lw,
+        legend.height,
+    );
     f.render_widget(Paragraph::new(lines), legend);
 }
 
@@ -193,8 +201,13 @@ fn detail(f: &mut Frame, area: Rect, app: &App, theme: &Theme) {
         return;
     }
     let chart_h = if inner.height >= 8 { 2 } else { 0 };
-    let [chart, text] =
-        Layout::vertical([Constraint::Length(chart_h), Constraint::Fill(1)]).areas(inner);
+    let gap = u16::from(chart_h > 0 && inner.height >= 10);
+    let [chart, _, text] = Layout::vertical([
+        Constraint::Length(chart_h),
+        Constraint::Length(gap),
+        Constraint::Fill(1),
+    ])
+    .areas(inner);
     if chart_h > 0
         && let Some(h) = app.hist.proc_cpu.get(&p.pid)
     {

@@ -1,5 +1,6 @@
 ---
 source: tests/ui_chrome_test.rs
+assertion_line: 71
 expression: text
 ---
                                                                                                     

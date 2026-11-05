@@ -50,14 +50,29 @@ pub fn x_axis(buf: &mut Buffer, area: Rect, plot: Rect, step_secs: f64, theme: &
     } else {
         2
     };
-    let ticks: Vec<u16> = (0..n)
-        .map(|i| if n == 1 { 0 } else { i * (w - 1) / (n - 1) })
+    // Ticks are spread out in time (round numbers) and then placed at the nearest column;
+    // this way all charts of the same window show the same thing.
+    let window = f64::from(w - 1) * step_secs;
+    let ticks: Vec<(u16, f64)> = (0..n)
+        .map(|i| {
+            let secs = (window * f64::from(n - 1 - i) / f64::from(n - 1)).round();
+            let back = if step_secs > 0.0 {
+                (secs / step_secs).round() as u16
+            } else {
+                0
+            };
+            ((w - 1).saturating_sub(back), secs)
+        })
         .collect();
     if plot.x > area.x {
         buf[(plot.x - 1, area.y)].set_char('└').set_style(line);
     }
     for c in 0..w {
-        let ch = if ticks.contains(&c) { '┴' } else { '─' };
+        let ch = if ticks.iter().any(|(t, _)| *t == c) {
+            '┴'
+        } else {
+            '─'
+        };
         buf[(plot.x + c, area.y)].set_char(ch).set_style(line);
     }
     if area.height < 2 {
@@ -65,8 +80,8 @@ pub fn x_axis(buf: &mut Buffer, area: Rect, plot: Rect, step_secs: f64, theme: &
     }
     let y = area.y + 1;
     let mut free_from = area.x;
-    for c in ticks {
-        let label = time_label(f64::from(w - 1 - c) * step_secs);
+    for (c, secs) in ticks {
+        let label = time_label(secs);
         let lw = label.chars().count() as u16;
         let center = plot.x + c;
         let start = center

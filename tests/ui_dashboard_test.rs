@@ -20,7 +20,7 @@ fn dashboard_layout_b_shows_every_panel() {
         "DISC /",
         "HISTORIAL CPU · GPU",
         "TEMPERATURES",
-        "XARXA  enp0s31f6",
+        "XARXA · enp0s31f6",
         "DISC I/O",
     ] {
         assert!(text.contains(needle), "falta {needle}\n{text}");
@@ -98,6 +98,41 @@ fn zoomed_legend_keeps_a_gap_from_the_donut() {
             "aspect {aspect}: donut up to column {pie_right}, legend at {legend_x}\n{text}"
         );
     }
+}
+
+#[test]
+fn panels_keep_inner_padding_and_donut_caption_sits_under_the_circle() {
+    let app = sample_app(10);
+    let text = render_text(122, 36, |f| dashboard::render(f, f.area(), &app, &theme()));
+    let rows: Vec<Vec<char>> = text.lines().map(|l| l.chars().collect()).collect();
+    let blocks = "▘▝▀▖▌▞▛▗▚▐▜▄▙▟█";
+    // CPU panel: columns 0..30 and the rows of the top strip (down to the bottom edge).
+    // No donut block stuck to the edge (column 1 or 29).
+    let bottom = (1..rows.len())
+        .find(|y| rows[*y][0] == '╰')
+        .expect("border");
+    let mut pie_rows = Vec::new();
+    for (y, r) in rows.iter().enumerate().take(bottom) {
+        let line: String = r[..30].iter().collect();
+        if line[3..].contains(|c| blocks.contains(c)) {
+            pie_rows.push(y);
+            assert!(
+                !blocks.contains(r[1]) && !blocks.contains(r[29]),
+                "row {y}: {line}"
+            );
+        }
+    }
+    let caption = rows
+        .iter()
+        .position(|r| r.iter().collect::<String>().contains("14 fils"))
+        .expect("caption");
+    let last = *pie_rows.last().expect("donut");
+    assert!(
+        caption > last && caption - last <= 2,
+        "caption at row {caption}, donut ends at {last}\n{text}"
+    );
+    // Top margin of the donut: it does not start on the first row of the panel.
+    assert!(pie_rows[0] >= 2, "{text}");
 }
 
 #[test]

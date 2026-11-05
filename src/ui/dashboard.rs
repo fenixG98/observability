@@ -9,7 +9,7 @@ use ratatui::widgets::{Block, Paragraph, Wrap};
 use crate::app::{App, Panel};
 use crate::model::{Avail, GpuReading, MemKind, human_bytes, human_rate};
 use crate::ui::axes::{fit_series, short_rate, x_axis, y_axis};
-use crate::ui::braille::{Area, AreaColor, Pie, hbar_line, vbar_symbol};
+use crate::ui::braille::{Area, AreaColor, Pie, hbar_line, pie_size, vbar_symbol};
 use crate::ui::theme::{Theme, truncate};
 
 /// "Intel(R) Core(TM) Ultra 5 125H" → "Core Ultra 5 125H".
@@ -108,9 +108,11 @@ fn corner_label(f: &mut Frame, area: Rect, text: &str, color: Color) {
     if area.width == 0 || area.height == 0 {
         return;
     }
-    let text = truncate(text, area.width as usize);
+    // One column of separation from the Y axis.
+    let pad = u16::from(area.width > 2);
+    let text = truncate(text, (area.width - pad) as usize);
     f.buffer_mut().set_string(
-        area.x,
+        area.x + pad,
         area.y,
         text,
         Style::new().fg(color).add_modifier(Modifier::BOLD),
@@ -130,18 +132,41 @@ fn donut(f: &mut Frame, area: Rect, block: Block<'static>, d: Donut, theme: &The
     if inner.height < 2 || inner.width < 4 {
         return;
     }
-    let [pie_area, text] =
-        Layout::vertical([Constraint::Fill(1), Constraint::Length(1)]).areas(inner);
-    // Actual circle width given the cell aspect ratio, and a fixed margin up to the legend.
+    // The circle, the legend (if it fits) and the subtitle form a group centered in the panel:
+    // one row of margin at the top and between the circle and the subtitle, and a fixed margin up to the legend.
     const LEGEND_GAP: u16 = 4;
-    let pie_w = (f64::from(pie_area.height) * theme.cell_aspect).round() as u16;
-    let pie_area = if !d.legend.is_empty() && pie_area.width >= pie_w + LEGEND_GAP + 22 {
-        let [p, _, legend] = Layout::horizontal([
-            Constraint::Length(pie_w),
-            Constraint::Length(LEGEND_GAP),
-            Constraint::Fill(1),
-        ])
-        .areas(pie_area);
+    let margin = u16::from(inner.height >= 8);
+    let pie_h = inner.height - 1 - 2 * margin;
+    let legend_w = d
+        .legend
+        .iter()
+        .map(|(_, l)| l.chars().count() as u16 + 2)
+        .max()
+        .unwrap_or(0);
+    let full_w = (f64::from(pie_h) * theme.cell_aspect).round() as u16;
+    let show_legend = legend_w > 0 && inner.width >= full_w + LEGEND_GAP + legend_w;
+    let room = if show_legend {
+        inner.width - LEGEND_GAP - legend_w
+    } else {
+        inner.width
+    };
+    let (pw, ph) = pie_size(room, pie_h, theme.cell_aspect);
+    let group_w = if show_legend {
+        pw + LEGEND_GAP + legend_w
+    } else {
+        pw
+    };
+    let x0 = inner.x + (inner.width - group_w) / 2;
+    let y0 = inner.y + margin + (pie_h - ph) / 2;
+    let pie_area = Rect::new(x0, y0, pw, ph);
+    let text = Rect::new(
+        inner.x,
+        (y0 + ph + margin).min(inner.bottom() - 1),
+        inner.width,
+        1,
+    );
+    if show_legend {
+        let legend = Rect::new(x0 + pw + LEGEND_GAP, y0, legend_w, ph);
         let lines: Vec<Line> = d
             .legend
             .iter()
@@ -162,10 +187,7 @@ fn donut(f: &mut Frame, area: Rect, block: Block<'static>, d: Donut, theme: &The
                 legend.height.min(d.legend.len() as u16),
             ),
         );
-        p
-    } else {
-        pie_area
-    };
+    }
     f.render_widget(
         Pie {
             segments: d.segments,
@@ -178,7 +200,13 @@ fn donut(f: &mut Frame, area: Rect, block: Block<'static>, d: Donut, theme: &The
         pie_area,
     );
     f.render_widget(
-        Paragraph::new(Line::from(Span::styled(d.sub, Style::new().fg(theme.dim))).centered()),
+        Paragraph::new(
+            Line::from(Span::styled(
+                truncate(&d.sub, text.width as usize),
+                Style::new().fg(theme.dim),
+            ))
+            .centered(),
+        ),
         text,
     );
 }
@@ -434,11 +462,14 @@ fn history(f: &mut Frame, area: Rect, app: &App, theme: &Theme, focused: bool) {
     }
     let bars_h = if inner.height >= 9 { 3 } else { 1 };
     let axis_h = if inner.height >= 12 { 2 } else { 0 };
-    let [cpu_a, sep, gpu_a, time_a, bars] = Layout::vertical([
+    // Without a time axis, a line separates the core bars from the GPU chart.
+    let bars_sep = u16::from(axis_h == 0);
+    let [cpu_a, sep, gpu_a, time_a, sep2, bars] = Layout::vertical([
         Constraint::Fill(1),
         Constraint::Length(1),
         Constraint::Fill(1),
         Constraint::Length(axis_h),
+        Constraint::Length(bars_sep),
         Constraint::Length(bars_h),
     ])
     .areas(inner);
@@ -469,10 +500,12 @@ fn history(f: &mut Frame, area: Rect, app: &App, theme: &Theme, focused: bool) {
         &format!("cpu {:.0}%", app.snapshot.cpu.total),
         theme.fg,
     );
-    f.render_widget(
-        Paragraph::new("─".repeat(sep.width as usize)).style(Style::new().fg(theme.border)),
-        sep,
-    );
+    for s in [sep, sep2] {
+        f.render_widget(
+            Paragraph::new("─".repeat(s.width as usize)).style(Style::new().fg(theme.border)),
+            s,
+        );
+    }
     match (app.current_gpu(), app.hist.gpu.get(app.gpu_index)) {
         (Some(g), Some(h)) if g.util.ok().is_some() => {
             let vals = fit_series(&h.values(), h.capacity(), gpu_a.width);
@@ -494,6 +527,7 @@ fn history(f: &mut Frame, area: Rect, app: &App, theme: &Theme, focused: bool) {
         }
         _ => corner_label(f, gpu_a, "gpu: sense dades d'ús", theme.dim),
     }
+    let bars = Rect::new(gpu_a.x, bars.y, gpu_a.width, bars.height);
     core_bars(f, bars, &app.snapshot.cpu.per_core, theme);
 }
 
@@ -535,11 +569,7 @@ fn temps(f: &mut Frame, area: Rect, app: &App, theme: &Theme, focused: bool) {
 
 fn net(f: &mut Frame, area: Rect, app: &App, theme: &Theme, focused: bool) {
     let n = &app.snapshot.net;
-    let block = theme.panel(
-        format!("XARXA  {}", n.iface_label),
-        format!("↓ {}  ↑ {}", human_rate(n.rx_bps), human_rate(n.tx_bps)),
-        focused,
-    );
+    let block = theme.panel(format!("XARXA · {}", n.iface_label), "", focused);
     let inner = block.inner(area);
     f.render_widget(block, area);
     if inner.height < 2 || inner.width < 14 {
@@ -548,8 +578,7 @@ fn net(f: &mut Frame, area: Rect, app: &App, theme: &Theme, focused: bool) {
     let axis_h = if inner.height >= 8 { 2 } else { 0 };
     let [body, time_a] =
         Layout::vertical([Constraint::Fill(1), Constraint::Length(axis_h)]).areas(inner);
-    let [labels, chart] =
-        Layout::horizontal([Constraint::Length(13), Constraint::Fill(1)]).areas(body);
+    let chart = body;
     let half = chart.height / 2;
     let scale = app.hist.rx.max().max(app.hist.tx.max()).max(1.0);
     // Mirror: download upward and upload downward, with 0 in the middle.
@@ -598,21 +627,21 @@ fn net(f: &mut Frame, area: Rect, app: &App, theme: &Theme, focused: bool) {
         },
         down,
     );
-    let bold = |c: Color| Style::new().fg(c).add_modifier(Modifier::BOLD);
-    f.render_widget(
-        Paragraph::new(Line::from(Span::styled(
-            format!("↓ {}", human_rate(n.rx_bps)),
-            bold(theme.rx),
-        ))),
-        Rect::new(labels.x, labels.y, labels.width, 1),
+    corner_label(
+        f,
+        up,
+        &format!("↓ baixada {}", human_rate(n.rx_bps)),
+        theme.rx,
     );
-    f.render_widget(
-        Paragraph::new(Line::from(Span::styled(
-            format!("↑ {}", human_rate(n.tx_bps)),
-            bold(theme.tx),
-        ))),
-        Rect::new(labels.x, labels.y + labels.height - 1, labels.width, 1),
-    );
+    if down.height > 0 {
+        let last = Rect::new(down.x, down.bottom() - 1, down.width, 1);
+        corner_label(
+            f,
+            last,
+            &format!("↑ pujada {}", human_rate(n.tx_bps)),
+            theme.tx,
+        );
+    }
 }
 
 fn disk_io(f: &mut Frame, area: Rect, app: &App, theme: &Theme, focused: bool) {
@@ -626,10 +655,18 @@ fn disk_io(f: &mut Frame, area: Rect, app: &App, theme: &Theme, focused: bool) {
     let axis_h = if inner.height >= 8 { 2 } else { 0 };
     let [inner, time_a] =
         Layout::vertical([Constraint::Fill(1), Constraint::Length(axis_h)]).areas(inner);
-    let half = inner.height / 2;
+    let sep = u16::from(inner.height >= 5);
+    let half = (inner.height - sep) / 2;
+    if sep > 0 {
+        let y = inner.y + inner.height - half - 1;
+        f.render_widget(
+            Paragraph::new("─".repeat(inner.width as usize)).style(Style::new().fg(theme.border)),
+            Rect::new(inner.x, y, inner.width, 1),
+        );
+    }
     let rows = [
         (
-            Rect::new(inner.x, inner.y, inner.width, inner.height - half),
+            Rect::new(inner.x, inner.y, inner.width, inner.height - half - sep),
             "llegir",
             d.read_bps,
             &app.hist.disk_r,

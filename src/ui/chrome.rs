@@ -189,7 +189,7 @@ pub fn help_overlay(f: &mut Frame, area: Rect, theme: &Theme) {
         .map(|(k, d)| {
             Line::from(vec![
                 Span::styled(
-                    format!(" {k:<30}"),
+                    format!("{k:<30}"),
                     Style::new().fg(theme.warm).add_modifier(Modifier::BOLD),
                 ),
                 Span::styled(d.to_string(), Style::new().fg(theme.fg)),
@@ -207,13 +207,13 @@ pub fn confirm_overlay(f: &mut Frame, area: Rect, pid: u32, name: &str, theme: &
     f.render_widget(Clear, r);
     let lines = vec![
         Line::from(Span::styled(
-            format!(" Enviar SIGTERM a {name} ({pid})?"),
+            format!("Enviar SIGTERM a {name} ({pid})?"),
             Style::new().fg(theme.fg),
         )),
         Line::from(""),
         Line::from(vec![
             Span::styled(
-                " s",
+                "s",
                 Style::new().fg(theme.warm).add_modifier(Modifier::BOLD),
             ),
             Span::styled(" / enter: sí     ", Style::new().fg(theme.dim)),

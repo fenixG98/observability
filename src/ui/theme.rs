@@ -3,7 +3,7 @@
 use ratatui::{
     style::{Color, Modifier, Style},
     text::Line,
-    widgets::{Block, BorderType},
+    widgets::{Block, BorderType, Padding},
 };
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -127,6 +127,7 @@ impl Theme {
         let right: String = right.into();
         let mut block = Block::bordered()
             .border_type(BorderType::Rounded)
+            .padding(Padding::horizontal(1))
             .border_style(Style::new().fg(border))
             .title(
                 Line::from(format!(" {} ", title.into()))
