@@ -7,6 +7,7 @@ use sysinfo::{
     Components, Disks, Networks, ProcessRefreshKind, ProcessesToUpdate, System, UpdateKind, Users,
 };
 
+#[cfg(target_os = "linux")]
 use crate::collect::procfs::Deltas;
 use crate::collect::{Control, Source, netfilter, temps};
 use crate::gpu::GpuProvider;
@@ -22,6 +23,7 @@ const NO_SENSORS: &str = "no hwmon sensor found (load the sensor module, e.g. co
 /// does a SMART query, the ACPI one evaluates firmware code): they are read every 5 s.
 const TEMPS_EVERY: Duration = Duration::from_secs(5);
 /// Used space and the list of mount points: every 10 s. I/O, on every sample.
+#[cfg(target_os = "linux")]
 const DISK_SPACE_EVERY: Duration = Duration::from_secs(10);
 /// How often to look for new processes using the GPU (see `DrmScanner`).
 #[cfg_attr(not(target_os = "linux"), allow(dead_code))]
@@ -43,10 +45,13 @@ pub struct SystemSource {
     #[cfg_attr(not(target_os = "linux"), allow(dead_code))]
     drm: crate::gpu::fdinfo::DrmScanner,
     last: Instant,
+    #[cfg(target_os = "linux")]
     net_deltas: Deltas,
+    #[cfg(target_os = "linux")]
     disk_deltas: Deltas,
     /// Last space reading: root device, mounts and devices (`/proc/diskstats`
     /// names) to sum for I/O.
+    #[cfg(target_os = "linux")]
     disk_space: Option<(Instant, String, Vec<MountUsage>, Vec<String>)>,
     /// Raw sensor reading and when it was taken.
     temps_raw: Option<(Instant, Vec<RawTemp>)>,
@@ -70,8 +75,11 @@ impl SystemSource {
             fdinfo: FdinfoTracker::default(),
             drm: Default::default(),
             last: Instant::now(),
+            #[cfg(target_os = "linux")]
             net_deltas: Deltas::default(),
+            #[cfg(target_os = "linux")]
             disk_deltas: Deltas::default(),
+            #[cfg(target_os = "linux")]
             disk_space: None,
             temps_raw: None,
         }
