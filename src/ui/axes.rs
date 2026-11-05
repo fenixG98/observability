@@ -100,7 +100,7 @@ pub fn x_axis(buf: &mut Buffer, area: Rect, plot: Rect, step_secs: f64, theme: &
 pub fn time_label(secs_ago: f64) -> String {
     let s = secs_ago.round().max(0.0) as u64;
     if s == 0 {
-        "ara".into()
+        "now".into()
     } else if s < 120 {
         format!("-{s}s")
     } else if s < 7200 {

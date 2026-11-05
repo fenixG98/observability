@@ -13,14 +13,14 @@ pub fn vendor_included(vendor: Option<&str>, handled: &[&str]) -> bool {
 
 /// Reason for the user when sysinfo does not give the usage.
 pub fn unavailable_reason(vendor: Option<&str>) -> String {
-    let v = vendor.unwrap_or("desconegut");
+    let v = vendor.unwrap_or("unknown");
     let l = v.to_lowercase();
     if l.contains("nvidia") {
-        "NVML no disponible: cal el driver propietari de NVIDIA (libnvidia-ml)".into()
+        "NVML not available: the proprietary NVIDIA driver is needed (libnvidia-ml)".into()
     } else if l.contains("amd") || l.contains("advanced micro") {
-        "el driver amdgpu no exposa gpu_busy_percent per a aquesta GPU".into()
+        "the amdgpu driver does not expose gpu_busy_percent for this GPU".into()
     } else {
-        format!("el sistema no exposa l'ús d'aquesta GPU ({v})")
+        format!("the system does not expose usage for this GPU ({v})")
     }
 }
 

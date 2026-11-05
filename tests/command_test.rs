@@ -33,15 +33,15 @@ fn parses_all_commands() {
 }
 
 #[test]
-fn reports_errors_in_catalan() {
-    assert!(parse("sort").unwrap_err().contains("ús"));
+fn reports_errors_in_english() {
+    assert!(parse("sort").unwrap_err().contains("usage"));
     assert!(parse("sort foo").unwrap_err().contains("foo"));
     assert!(parse("kill abc").unwrap_err().contains("pid"));
     assert!(parse("refresh 50ms").unwrap_err().contains("100ms"));
     assert!(parse("refresh 2m").is_err());
     assert!(parse("gpu 0").is_err());
     assert!(parse("").is_err());
-    assert!(parse("foo").unwrap_err().contains("desconeguda"));
+    assert!(parse("foo").unwrap_err().contains("unknown"));
 }
 
 #[test]

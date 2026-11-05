@@ -230,7 +230,7 @@ impl App {
         self.visible_procs().get(self.selected).copied()
     }
 
-    /// CPU fraction of the top `n` processes, plus "altres" (sums to 1).
+    /// CPU fraction of the top `n` processes, plus "other" (sums to 1).
     pub fn cpu_share(&self, n: usize) -> Vec<(String, f64)> {
         let Some(procs) = &self.snapshot.procs else {
             return Vec::new();
@@ -248,7 +248,7 @@ impl App {
             .collect();
         let rest = 1.0 - out.iter().map(|s| s.1).sum::<f64>();
         if rest > 1e-9 {
-            out.push(("altres".into(), rest));
+            out.push(("other".into(), rest));
         }
         out
     }
@@ -364,11 +364,11 @@ impl App {
                 self.mode = Mode::Normal;
                 match ev.code {
                     KeyCode::Char('s') | KeyCode::Char('y') | KeyCode::Enter => {
-                        self.status = Some(format!("enviant SIGTERM a {name} ({pid})"));
+                        self.status = Some(format!("sending SIGTERM to {name} ({pid})"));
                         vec![Effect::Kill(pid)]
                     }
                     _ => {
-                        self.status = Some("cancel·lat".into());
+                        self.status = Some("cancelled".into());
                         Vec::new()
                     }
                 }
@@ -482,7 +482,7 @@ impl App {
             Command::Sort(k) => {
                 self.sort = k;
                 self.selected = 0;
-                self.status = Some(format!("ordre: {}", k.label()));
+                self.status = Some(format!("sort: {}", k.label()));
                 Vec::new()
             }
             Command::Filter(f) => {
@@ -496,7 +496,7 @@ impl App {
                     .procs
                     .as_ref()
                     .and_then(|ps| ps.iter().find(|p| p.pid == pid))
-                    .map_or_else(|| "procés desconegut".to_string(), |p| p.name.clone());
+                    .map_or_else(|| "unknown process".to_string(), |p| p.name.clone());
                 self.mode = Mode::ConfirmKill { pid, name };
                 Vec::new()
             }
@@ -504,7 +504,7 @@ impl App {
                 self.refresh = d;
                 let len = self.history_len();
                 self.hist.set_len(len);
-                self.status = Some(format!("refresc: {} ms", d.as_millis()));
+                self.status = Some(format!("refresh: {} ms", d.as_millis()));
                 vec![Effect::SetRefresh(d)]
             }
             Command::Gpu(i) => {
@@ -512,14 +512,14 @@ impl App {
                 if i < n {
                     self.gpu_index = i;
                 } else {
-                    self.status = Some(format!("no hi ha GPU {} (n'hi ha {n})", i + 1));
+                    self.status = Some(format!("no GPU {} (there are {n})", i + 1));
                 }
                 Vec::new()
             }
             Command::Net(iface) => {
                 self.status = Some(match &iface {
-                    Some(i) => format!("xarxa: {i}"),
-                    None => "xarxa: interfícies físiques".into(),
+                    Some(i) => format!("network: {i}"),
+                    None => "network: physical interfaces".into(),
                 });
                 vec![Effect::SetNetIface(iface)]
             }

@@ -20,7 +20,7 @@ fn version_and_help() {
 fn unknown_argument_fails_with_code_2() {
     let out = bin().arg("--nope").output().unwrap();
     assert_eq!(out.status.code(), Some(2));
-    assert!(String::from_utf8_lossy(&out.stderr).contains("argument desconegut"));
+    assert!(String::from_utf8_lossy(&out.stderr).contains("unknown argument"));
 }
 
 #[test]
@@ -30,12 +30,12 @@ fn probe_prints_a_report() {
     let text = String::from_utf8_lossy(&out.stdout);
     for needle in [
         "cpu:",
-        "memòria:",
+        "memory:",
         "gpu:",
         "temperatures",
-        "xarxa:",
-        "disc:",
-        "processos:",
+        "network:",
+        "disk:",
+        "processes:",
     ] {
         assert!(text.contains(needle), "falta {needle}\n{text}");
     }

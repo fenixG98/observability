@@ -35,7 +35,7 @@ fn row(
 }
 
 pub fn render(f: &mut Frame, area: Rect, app: &App, theme: &Theme) {
-    let block = theme.panel("RESUM", "vista compacta", false);
+    let block = theme.panel("SUMMARY", "compact view", false);
     let inner = block.inner(area);
     f.render_widget(block, area);
     if inner.width < LABEL_W + 6 || inner.height == 0 {
@@ -92,7 +92,7 @@ pub fn render(f: &mut Frame, area: Rect, app: &App, theme: &Theme) {
         None => lines.push(Line::from(vec![
             Span::styled(format!("{:<9}", "GPU"), label_style),
             Span::styled(
-                s.gpus.reason().unwrap_or("cap GPU").to_string(),
+                s.gpus.reason().unwrap_or("no GPU").to_string(),
                 Style::new().fg(theme.warm),
             ),
         ])),
@@ -104,7 +104,7 @@ pub fn render(f: &mut Frame, area: Rect, app: &App, theme: &Theme) {
         "MEM",
         used,
         theme.level(used),
-        &format!("{:.0}% de {}", used * 100.0, human_bytes(m.total)),
+        &format!("{:.0}% of {}", used * 100.0, human_bytes(m.total)),
         bar_w,
         theme,
     ));
@@ -129,7 +129,7 @@ pub fn render(f: &mut Frame, area: Rect, app: &App, theme: &Theme) {
             d.used as f64 / d.total as f64
         };
         lines.push(row(
-            &format!("DISC {}", d.mount),
+            &format!("DISK {}", d.mount),
             t,
             theme.palette[3],
             &format!("{}/{}", human_bytes(d.used), human_bytes(d.total)),
@@ -146,7 +146,7 @@ pub fn render(f: &mut Frame, area: Rect, app: &App, theme: &Theme) {
     ));
     lines.push(Line::from(vec![
         Span::styled(
-            format!("{:<9}", "↓ xarxa"),
+            format!("{:<9}", "↓ net"),
             Style::new().fg(theme.rx).add_modifier(Modifier::BOLD),
         ),
         Span::styled(
@@ -156,13 +156,13 @@ pub fn render(f: &mut Frame, area: Rect, app: &App, theme: &Theme) {
     ]));
     lines.push(Line::from(vec![
         Span::styled(
-            format!("{:<9}", "↑ xarxa"),
+            format!("{:<9}", "↑ net"),
             Style::new().fg(theme.tx).add_modifier(Modifier::BOLD),
         ),
         Span::styled(human_rate(s.net.tx_bps), Style::new().fg(theme.dim)),
     ]));
     lines.push(Line::from(vec![
-        Span::styled(format!("{:<9}", "disc I/O"), label_style),
+        Span::styled(format!("{:<9}", "disk I/O"), label_style),
         Span::styled(
             format!(
                 "r {}  w {}",

@@ -18,20 +18,20 @@ use ratatui::crossterm::event::{self, Event, KeyEventKind};
 
 fn help_text() -> String {
     let path = config::default_path().map_or_else(
-        || "(no disponible)".to_string(),
+        || "(not available)".to_string(),
         |p| p.display().to_string(),
     );
     format!(
-        "obstui — monitor de recursos en terminal
+        "obstui — terminal resource monitor
 
-Ús: obstui [--probe | --version | --help]
+Usage: obstui [--probe | --version | --help]
 
-  (sense arguments)  obre la interfície
-  --probe            imprimeix un diagnòstic (CPU, memòria, GPU, temperatures...) i surt
-  --version, -V      mostra la versió
-  --help, -h         mostra aquesta ajuda
+  (no arguments)     open the interface
+  --probe            print a diagnostic (CPU, memory, GPU, temperatures...) and exit
+  --version, -V      show the version
+  --help, -h         show this help
 
-Configuració: {path}
+Config: {path}
 "
     )
 }
@@ -52,7 +52,7 @@ fn main() {
             Ok(())
         }
         Some(other) => {
-            eprintln!("argument desconegut: {other}\n\n{}", help_text());
+            eprintln!("unknown argument: {other}\n\n{}", help_text());
             std::process::exit(2);
         }
     };
@@ -79,8 +79,8 @@ fn run_tui() -> io::Result<()> {
     let (keymap, key_warning) = match KeyMap::from_config(&cfg) {
         Ok(k) => (k, None),
         Err(e) => (
-            KeyMap::from_config(&Config::default()).expect("the default keys are valid"),
-            Some(format!("tecles invàlides ({e}); s'usen les per defecte")),
+            KeyMap::from_config(&Config::default()).expect("default keys are valid"),
+            Some(format!("invalid keys ({e}); using defaults")),
         ),
     };
     let truecolor = cfg
@@ -127,7 +127,7 @@ fn event_loop(
                 }
                 Err(TryRecvError::Empty) => break,
                 Err(TryRecvError::Disconnected) => {
-                    return Err(io::Error::other("el fil recol·lector s'ha aturat"));
+                    return Err(io::Error::other("the collector thread stopped"));
                 }
             }
         }
@@ -147,7 +147,7 @@ fn event_loop(
                         Effect::Kill(pid) => {
                             app.status = Some(match collect::kill_process(pid) {
                                 Ok(()) => format!("SIGTERM enviat a {pid}"),
-                                Err(e) => format!("no s'ha pogut matar {pid}: {e}"),
+                                Err(e) => format!("could not kill {pid}: {e}"),
                             });
                         }
                         Effect::SetRefresh(d) => ctl.set_interval(d),

@@ -52,7 +52,7 @@ pub fn sample_snapshot() -> Snapshot {
                 seg("apps", 6.2, MemKind::Used),
                 seg("cache", 4.1, MemKind::Reclaimable),
                 seg("buffers", 0.6, MemKind::Reclaimable),
-                seg("lliure", 5.1, MemKind::Free),
+                seg("free", 5.1, MemKind::Free),
             ],
             swap_used: GIB * 8 / 10,
             swap_total: 8 * GIB,
@@ -73,11 +73,11 @@ pub fn sample_snapshot() -> Snapshot {
                 celsius: 68.0,
             },
             TempSensor {
-                label: "Nuclis".into(),
+                label: "Cores".into(),
                 celsius: 71.0,
             },
             TempSensor {
-                label: "Disc".into(),
+                label: "Disk".into(),
                 celsius: 42.0,
             },
             TempSensor {

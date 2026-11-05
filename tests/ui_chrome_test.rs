@@ -15,7 +15,7 @@ fn tab_bar_shows_tabs_and_host() {
     let text = render_text(122, 1, |f| chrome::tab_bar(f, f.area(), &app, &theme()));
     assert!(text.contains("obstui"));
     assert!(text.contains(" 1 Dashboard "));
-    assert!(text.contains(" 2 Processos "));
+    assert!(text.contains(" 2 Processes "));
     assert!(text.contains("devhost · up 3d 4h · load 1.42 0.98 0.77"));
     insta::assert_snapshot!(text);
 }
@@ -34,10 +34,10 @@ fn status_line_hints_and_messages() {
     let mut app = sample_app(1);
     let text = render_text(122, 1, |f| chrome::status_line(f, f.area(), &app, &theme()));
     assert!(text.contains("hjkl focus"));
-    assert!(text.contains("refresc 1000 ms"));
-    app.status = Some("ordre: mem".into());
+    assert!(text.contains("refresh 1000 ms"));
+    app.status = Some("sort: mem".into());
     let text = render_text(122, 1, |f| chrome::status_line(f, f.area(), &app, &theme()));
-    assert!(text.contains("ordre: mem"));
+    assert!(text.contains("sort: mem"));
 }
 
 #[test]
@@ -52,10 +52,10 @@ fn status_line_command_mode_shows_candidates_or_error() {
     assert!(text.contains("cpu"));
     app.mode = Mode::Command {
         input: "foo".into(),
-        error: Some("ordre desconeguda: foo".into()),
+        error: Some("unknown command: foo".into()),
     };
     let text = render_text(80, 1, |f| chrome::status_line(f, f.area(), &app, &theme()));
-    assert!(text.contains("ordre desconeguda: foo"));
+    assert!(text.contains("unknown command: foo"));
     app.mode = Mode::Filter {
         input: "fire".into(),
     };
@@ -66,13 +66,13 @@ fn status_line_command_mode_shows_candidates_or_error() {
 #[test]
 fn overlays_render_centered() {
     let text = render_text(100, 30, |f| chrome::help_overlay(f, f.area(), &theme()));
-    assert!(text.contains("AJUDA"));
+    assert!(text.contains("HELP"));
     assert!(text.contains(":sort cpu|mem|gpu|pid|name"));
     insta::assert_snapshot!(text);
     let text = render_text(100, 30, |f| {
         chrome::confirm_overlay(f, f.area(), 4412, "firefox", &theme())
     });
-    assert!(text.contains("Enviar SIGTERM a firefox (4412)?"));
+    assert!(text.contains("Send SIGTERM to firefox (4412)?"));
     assert_eq!(
         chrome::centered(Rect::new(0, 0, 100, 30), 50, 5),
         Rect::new(25, 12, 50, 5)

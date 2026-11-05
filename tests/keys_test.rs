@@ -126,7 +126,7 @@ fn ctrl_c_always_quits() {
 fn duplicate_or_invalid_keys_are_errors() {
     let mut c = Config::default();
     c.keys.zoom = "q".into();
-    assert!(KeyMap::from_config(&c).err().unwrap().contains("repetida"));
+    assert!(KeyMap::from_config(&c).err().unwrap().contains("twice"));
     let mut c = Config::default();
     c.prefix.enabled = true;
     c.prefix.key = "ctrl+".into();

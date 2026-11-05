@@ -83,7 +83,7 @@ fn system_source_smoke() {
     assert!(!s.mem.segments.is_empty());
     assert!(!s.disk.mounts.is_empty());
     assert!(s.procs.is_none());
-    assert_eq!(s.gpus.reason(), Some("no s'ha detectat cap GPU"));
+    assert_eq!(s.gpus.reason(), Some("no GPU detected"));
     ctl.set_procs_visible(true);
     let s = src.sample(&ctl);
     let me = std::process::id();

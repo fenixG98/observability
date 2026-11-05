@@ -8,23 +8,23 @@ expression: text
                                                                                                     
                                                                                                     
                                                                                                     
-             ╭ AJUDA ────────────────────────────────────────── qualsevol tecla tanca ╮             
-             │ 1 / 2                         pestanya Dashboard / Processos           │             
-             │ n / p                         pestanya següent / anterior              │             
-             │ h j k l, fletxes              moure el focus entre panells             │             
-             │ z                             zoom del panell actiu                    │             
-             │ g                             següent GPU                              │             
-             │ j / k (processos)             moure la selecció                        │             
-             │ x                             matar el procés seleccionat              │             
-             │ /                             filtrar processos                        │             
-             │ :                             mode d'ordres (Tab completa)             │             
-             │ ?                             aquesta ajuda                            │             
-             │ q, ctrl+c                     sortir                                   │             
+             ╭ HELP ────────────────────────────────────────────────── any key closes ╮             
+             │ 1 / 2                         Dashboard / Processes tab                │             
+             │ n / p                         next / previous tab                      │             
+             │ h j k l, arrows               move focus between panels                │             
+             │ z                             zoom the active panel                    │             
+             │ g                             next GPU                                 │             
+             │ j / k (processes)             move the selection                       │             
+             │ x                             kill the selected process                │             
+             │ /                             filter processes                         │             
+             │ :                             command mode (Tab completes)             │             
+             │ ?                             this help                                │             
+             │ q, ctrl+c                     quit                                     │             
              │                                                                        │             
-             │ :dash  :proc                  canviar de pestanya                      │             
-             │ :sort cpu|mem|gpu|pid|name    ordenar processos                        │             
-             │ :filter <text>                filtrar (sense text = treure)            │             
-             │ :kill <pid>                   matar un procés (demana confirmació)     │             
-             │ :refresh 500ms                interval de refresc                      │             
-             │ :gpu <n>  :net <iface|auto>   triar GPU / interfície                   │             
+             │ :dash  :proc                  switch tab                               │             
+             │ :sort cpu|mem|gpu|pid|name    sort processes                           │             
+             │ :filter <text>                filter (no text = clear)                 │             
+             │ :kill <pid>                   kill a process (asks first)              │             
+             │ :refresh 500ms                refresh interval                         │             
+             │ :gpu <n>  :net <iface|auto>   pick GPU / interface                     │             
              ╰────────────────────────────────────────────────────────────────────────╯

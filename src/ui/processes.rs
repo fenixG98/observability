@@ -52,21 +52,20 @@ fn note(
 fn table(f: &mut Frame, area: Rect, app: &App, theme: &Theme) {
     let procs = app.visible_procs();
     let right = format!(
-        "{} · ordre: {} · filtre: {}",
+        "{} · sort: {} · filter: {}",
         procs.len(),
         app.sort.label(),
         app.filter.as_deref().unwrap_or("–")
     );
     let block = theme
-        .panel("PROCESSOS", right, app.focus == Panel::ProcTable)
+        .panel("PROCESSES", right, app.focus == Panel::ProcTable)
         .title_bottom(
-            Line::from(" j/k moure · x matar · / filtrar · :sort ")
-                .style(Style::new().fg(theme.dim)),
+            Line::from(" j/k move · x kill · / filter · :sort ").style(Style::new().fg(theme.dim)),
         );
     if app.snapshot.procs.is_none() {
-        return note(f, area, block, "carregant processos…", theme);
+        return note(f, area, block, "loading processes…", theme);
     }
-    let header = Row::new(["    PID", "NOM", "USUARI", "  CPU%", "", "   MEM", " GPU%"])
+    let header = Row::new(["    PID", "NAME", "USER", "  CPU%", "", "   MEM", " GPU%"])
         .style(Style::new().fg(theme.title).add_modifier(Modifier::BOLD));
     let rows = procs.iter().map(|p| {
         let frac = (p.cpu as f64 / 100.0).clamp(0.0, 1.0);
@@ -111,10 +110,10 @@ fn table(f: &mut Frame, area: Rect, app: &App, theme: &Theme) {
 }
 
 fn pie(f: &mut Frame, area: Rect, app: &App, theme: &Theme) {
-    let block = theme.panel("QUI GASTA LA CPU", "top 4", app.focus == Panel::ProcPie);
+    let block = theme.panel("TOP CPU USERS", "top 4", app.focus == Panel::ProcPie);
     let shares = app.cpu_share(4);
     if shares.is_empty() {
-        return note(f, area, block, "sense ús de CPU per mostrar", theme);
+        return note(f, area, block, "no CPU usage to show", theme);
     }
     let inner = block.inner(area);
     f.render_widget(block, area);
@@ -122,7 +121,7 @@ fn pie(f: &mut Frame, area: Rect, app: &App, theme: &Theme) {
         .iter()
         .enumerate()
         .map(|(i, (name, _))| {
-            if name == "altres" {
+            if name == "other" {
                 theme.empty
             } else {
                 theme.palette[i % theme.palette.len()]
@@ -185,8 +184,8 @@ fn detail(f: &mut Frame, area: Rect, app: &App, theme: &Theme) {
         return note(
             f,
             area,
-            theme.panel("DETALL", "", focused),
-            "cap procés seleccionat",
+            theme.panel("DETAILS", "", focused),
+            "no process selected",
             theme,
         );
     };
@@ -245,27 +244,30 @@ fn detail(f: &mut Frame, area: Rect, app: &App, theme: &Theme) {
             Span::styled(gpu, val),
         ]),
         Line::from(vec![
-            Span::styled("usuari ", dim),
+            Span::styled("user ", dim),
             Span::styled(p.user.clone(), val),
         ]),
         Line::from(vec![
-            Span::styled("en marxa ", dim),
+            Span::styled("running ", dim),
             Span::styled(
                 format!(
-                    "fa {}",
+                    "for {}",
                     human_duration(app.snapshot.taken_at.saturating_sub(p.start_time))
                 ),
                 val,
             ),
         ]),
-        Line::from(vec![Span::styled("fils ", dim), Span::styled(threads, val)]),
+        Line::from(vec![
+            Span::styled("threads ", dim),
+            Span::styled(threads, val),
+        ]),
         Line::from(Span::styled(truncate(&p.exe, inner.width as usize), dim)),
         Line::from(vec![
             Span::styled(
                 "x",
                 Style::new().fg(theme.warm).add_modifier(Modifier::BOLD),
             ),
-            Span::styled(" matar", dim),
+            Span::styled(" kill", dim),
         ]),
     ];
     f.render_widget(Paragraph::new(lines), text);

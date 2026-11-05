@@ -5,11 +5,11 @@ fn avail_accessors() {
     let ok: Avail<u32> = Avail::Ok(3);
     assert_eq!(ok.ok(), Some(&3));
     assert_eq!(ok.reason(), None);
-    let no: Avail<u32> = Avail::Unavailable("cal permís".into());
+    let no: Avail<u32> = Avail::Unavailable("permission needed".into());
     assert_eq!(no.ok(), None);
-    assert_eq!(no.reason(), Some("cal permís"));
+    assert_eq!(no.reason(), Some("permission needed"));
     let def: Avail<u32> = Avail::default();
-    assert_eq!(def.reason(), Some("sense dades encara"));
+    assert_eq!(def.reason(), Some("no data yet"));
 }
 
 #[test]
@@ -28,7 +28,7 @@ fn used_fraction_counts_only_used_segments() {
                 kind: MemKind::Reclaimable,
             },
             MemSegment {
-                label: "lliure".into(),
+                label: "free".into(),
                 bytes: 30,
                 kind: MemKind::Free,
             },

@@ -45,7 +45,7 @@ pub fn parse_linux_meminfo(text: &str) -> Result<MemSnap, String> {
             seg("apps", apps, MemKind::Used),
             seg("cache", cache, MemKind::Reclaimable),
             seg("buffers", buffers, MemKind::Reclaimable),
-            seg("lliure", free, MemKind::Free),
+            seg("free", free, MemKind::Free),
         ],
         swap_used: swap_total.saturating_sub(swap_free),
         swap_total,
@@ -73,9 +73,9 @@ pub fn macos_segments(v: &MacVm, total: u64, swap_used: u64, swap_total: u64) ->
         segments: vec![
             seg("apps", apps, MemKind::Used),
             seg("wired", v.wired, MemKind::Used),
-            seg("comprimida", v.compressed, MemKind::Used),
+            seg("compressed", v.compressed, MemKind::Used),
             seg("cache", cache, MemKind::Reclaimable),
-            seg("lliure", free, MemKind::Free),
+            seg("free", free, MemKind::Free),
         ],
         swap_used,
         swap_total,
@@ -97,7 +97,7 @@ pub fn read_macos(total: u64, swap_used: u64, swap_total: u64) -> Result<MemSnap
             &mut count,
         );
         if ret != libc::KERN_SUCCESS {
-            return Err(format!("host_statistics64 ha fallat ({ret})"));
+            return Err(format!("host_statistics64 failed ({ret})"));
         }
         let page = libc::sysconf(libc::_SC_PAGESIZE) as u64;
         let v = MacVm {

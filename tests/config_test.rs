@@ -66,7 +66,7 @@ fn invalid_file_gives_defaults_with_warning() {
     std::fs::write(&path, "refresh_ms = \"fast\"").unwrap();
     let (c, w) = config::load(&path);
     assert_eq!(c, Config::default());
-    assert!(w.unwrap().contains("configuració invàlida"));
+    assert!(w.unwrap().contains("invalid config"));
     std::fs::remove_dir_all(&dir).unwrap();
 }
 

@@ -3,8 +3,8 @@ source: tests/ui_processes_test.rs
 assertion_line: 35
 expression: text
 ---
-╭ PROCESSOS ──────────────────────────────────────── 5 · ordre: cpu · filtre: – ╮╭ QUI GASTA LA CPU ────────────── top 4 ╮
-│     PID NOM                          USUARI      CPU%               MEM  GPU% ││              ▄▄██▐███▄▄               │
+╭ PROCESSES ───────────────────────────────────────── 5 · sort: cpu · filter: – ╮╭ TOP CPU USERS ───────────────── top 4 ╮
+│     PID NAME                         USER        CPU%               MEM  GPU% ││              ▄▄██▐███▄▄               │
 │    4412 firefox                      alice       12.8 ■■■■■■■■■■   1.8G    6% ││            ▄▄████▙██████▄             │
 │    9921 rust-analyzer                alice        8.1 ■■■■■■■■■■   2.3G     – ││          ▗████▄███████████▖           │
 │    1203 ghostty                      alice        3.9 ■■■■■■■■■■   210M    2% ││          ▟█████▙▜█████████▙           │
@@ -18,18 +18,18 @@ expression: text
 │                                                                               ││       ■ rust-analyzer     29%         │
 │                                                                               ││       ■ ghostty           14%         │
 │                                                                               ││       ■ kwin_x11          11%         │
-│                                                                               ││       ■ altres             1%         │
+│                                                                               ││       ■ other              1%         │
 │                                                                               │╰───────────────────────────────────────╯
 │                                                                               │╭ rust-analyzer · 9921 ─────────────────╮
 │                                                                               ││ 100%┤                                 │
 │                                                                               ││   0%┤                               ▁ │
 │                                                                               ││                                       │
 │                                                                               ││ cpu 8.1%   mem 2.3G   gpu –           │
-│                                                                               ││ usuari alice                          │
-│                                                                               ││ en marxa fa 3h 12m                    │
-│                                                                               ││ fils 4                                │
+│                                                                               ││ user alice                            │
+│                                                                               ││ running for 3h 12m                    │
+│                                                                               ││ threads 4                             │
 │                                                                               ││ /usr/bin/rust-analyzer                │
-│                                                                               ││ x matar                               │
+│                                                                               ││ x kill                                │
 │                                                                               ││                                       │
 │                                                                               ││                                       │
-╰ j/k moure · x matar · / filtrar · :sort ──────────────────────────────────────╯╰───────────────────────────────────────╯
+╰ j/k move · x kill · / filter · :sort ─────────────────────────────────────────╯╰───────────────────────────────────────╯

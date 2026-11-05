@@ -62,7 +62,7 @@ mod intel {
             msg.contains("sudo setcap cap_perfmon=ep /home/u/.cargo/bin/obstui"),
             "{msg}"
         );
-        assert!(msg.contains("recompilar"));
+        assert!(msg.contains("rebuild"));
         let e = std::io::Error::from_raw_os_error(libc::ENODEV);
         assert!(open_error_reason(&e, exe).contains("PMU"));
     }
@@ -123,10 +123,10 @@ mod intel {
 
     #[test]
     fn failed_provider_reports_reason() {
-        let mut g = IntelGpu::failed("Meteor Lake-P [Intel Graphics]", "cal permís");
+        let mut g = IntelGpu::failed("Meteor Lake-P [Intel Graphics]", "permission needed");
         let r = g.read();
         assert_eq!(r.len(), 1);
-        assert_eq!(r[0].util, Avail::Unavailable("cal permís".into()));
+        assert_eq!(r[0].util, Avail::Unavailable("permission needed".into()));
         assert!(!r[0].discrete);
         assert_eq!(r[0].vram_total, None);
     }

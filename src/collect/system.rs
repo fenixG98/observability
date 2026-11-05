@@ -13,10 +13,9 @@ use crate::gpu::fdinfo::FdinfoTracker;
 use crate::model::*;
 
 #[cfg(target_os = "macos")]
-const NO_SENSORS: &str = "no s'han pogut llegir els sensors (IOHID/SMC)";
+const NO_SENSORS: &str = "could not read the sensors (IOHID/SMC)";
 #[cfg(not(target_os = "macos"))]
-const NO_SENSORS: &str =
-    "no s'ha trobat cap sensor hwmon (carrega el mòdul del sensor, p. ex. coretemp o k10temp)";
+const NO_SENSORS: &str = "no hwmon sensor found (load the sensor module, e.g. coretemp or k10temp)";
 
 pub struct SystemSource {
     sys: System,
@@ -33,7 +32,7 @@ pub struct SystemSource {
 
 impl SystemSource {
     pub fn new(gpus: Vec<Box<dyn GpuProvider>>) -> SystemSource {
-        let mut sys = System::new().expect("sysinfo does not support this operating system");
+        let mut sys = System::new().expect("sysinfo does not support this OS");
         sys.refresh_cpu_all();
         SystemSource {
             sys,
@@ -93,7 +92,7 @@ impl SystemSource {
                     kind: MemKind::Used,
                 },
                 MemSegment {
-                    label: "lliure".into(),
+                    label: "free".into(),
                     bytes: total - used,
                     kind: MemKind::Free,
                 },
@@ -130,7 +129,7 @@ impl SystemSource {
     fn net(&mut self, ctl: &Control, dt: f64) -> NetSnap {
         let Some(nets) = self.nets.as_mut() else {
             return NetSnap {
-                iface_label: "xarxa no disponible".into(),
+                iface_label: "network not available".into(),
                 ..Default::default()
             };
         };
@@ -268,7 +267,7 @@ impl Source for SystemSource {
         let mut readings: Vec<GpuReading> = self.gpus.iter_mut().flat_map(|g| g.read()).collect();
         readings.sort_by_key(|r| !r.discrete);
         let gpus = if readings.is_empty() {
-            Avail::Unavailable("no s'ha detectat cap GPU".into())
+            Avail::Unavailable("no GPU detected".into())
         } else {
             Avail::Ok(readings.clone())
         };

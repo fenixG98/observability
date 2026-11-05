@@ -104,13 +104,13 @@ where
 /// which `kill` interprets as groups).
 pub fn kill_process(pid: u32) -> Result<(), String> {
     if pid == 0 || pid > i32::MAX as u32 {
-        return Err(format!("pid invàlid: {pid}"));
+        return Err(format!("invalid pid: {pid}"));
     }
     if pid == 1 {
         return Err("pid 1 (init) protegit".into());
     }
     if pid == std::process::id() {
-        return Err("no es pot matar el propi procés".into());
+        return Err("refusing to kill obstui itself".into());
     }
     // SAFETY: system call with no pointers.
     let r = unsafe { libc::kill(pid as libc::pid_t, libc::SIGTERM) };

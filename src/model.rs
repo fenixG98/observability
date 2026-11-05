@@ -25,7 +25,7 @@ impl<T> Avail<T> {
 
 impl<T> Default for Avail<T> {
     fn default() -> Self {
-        Avail::Unavailable("sense dades encara".into())
+        Avail::Unavailable("no data yet".into())
     }
 }
 

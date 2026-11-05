@@ -116,18 +116,18 @@ impl Config {
     pub fn validate(&self) -> Result<(), String> {
         if !(100..=60_000).contains(&self.refresh_ms) {
             return Err(format!(
-                "refresh_ms ha d'estar entre 100 i 60000 (és {})",
+                "refresh_ms must be between 100 and 60000 (got {})",
                 self.refresh_ms
             ));
         }
         if !(10..=3600).contains(&self.history_secs) {
             return Err(format!(
-                "history_secs ha d'estar entre 10 i 3600 (és {})",
+                "history_secs must be between 10 and 3600 (got {})",
                 self.history_secs
             ));
         }
         if self.temps.warm.partial_cmp(&self.temps.hot) != Some(std::cmp::Ordering::Less) {
-            return Err("temps.warm ha de ser més petit que temps.hot".into());
+            return Err("temps.warm must be lower than temps.hot".into());
         }
         Ok(())
     }
@@ -151,14 +151,14 @@ pub fn load(path: &Path) -> (Config, Option<String>) {
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => (Config::default(), None),
         Err(e) => (
             Config::default(),
-            Some(format!("no s'ha pogut llegir {}: {e}", path.display())),
+            Some(format!("could not read {}: {e}", path.display())),
         ),
         Ok(text) => match parse(&text) {
             Ok(c) => (c, None),
             Err(e) => (
                 Config::default(),
                 Some(format!(
-                    "configuració invàlida a {} ({e}); s'usen valors per defecte",
+                    "invalid config in {} ({e}); using defaults",
                     path.display()
                 )),
             ),

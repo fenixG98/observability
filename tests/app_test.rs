@@ -144,7 +144,7 @@ fn command_errors_keep_the_input() {
     match &app.mode {
         Mode::Command { input, error } => {
             assert_eq!(input, "foo");
-            assert!(error.as_ref().unwrap().contains("desconeguda"));
+            assert!(error.as_ref().unwrap().contains("unknown"));
         }
         m => panic!("mode inesperat: {m:?}"),
     }
@@ -205,7 +205,7 @@ fn kill_requires_confirmation() {
     );
     app.on_key(&key(KeyCode::Char('x')), &mut d);
     assert!(app.on_key(&key(KeyCode::Char('n')), &mut d).is_empty());
-    assert_eq!(app.status.as_deref(), Some("cancel·lat"));
+    assert_eq!(app.status.as_deref(), Some("cancelled"));
     app.apply_command(Command::Kill(1));
     assert_eq!(
         app.mode,
@@ -236,7 +236,7 @@ fn refresh_command_resizes_histories() {
 fn gpu_and_net_commands() {
     let mut app = sample_app(1);
     app.apply_command(Command::Gpu(3));
-    assert!(app.status.as_deref().unwrap().contains("no hi ha GPU 4"));
+    assert!(app.status.as_deref().unwrap().contains("no GPU 4"));
     assert_eq!(app.gpu_index, 0);
     assert_eq!(
         app.apply_command(Command::Net(Some("eth0".into()))),
@@ -271,7 +271,7 @@ fn cpu_share_has_top_n_plus_others() {
     let share = app.cpu_share(2);
     assert_eq!(share.len(), 3);
     assert_eq!(share[0].0, "firefox");
-    assert_eq!(share[2].0, "altres");
+    assert_eq!(share[2].0, "other");
     assert!((share.iter().map(|s| s.1).sum::<f64>() - 1.0).abs() < 1e-9);
     assert!((share[0].1 - 12.8 / 28.1).abs() < 1e-3);
 }

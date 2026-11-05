@@ -57,16 +57,16 @@ pub fn select(names: &[String], pinned: Option<&str>) -> NetSelection {
         } else {
             NetSelection {
                 names: vec![],
-                label: format!("{p} (no trobada)"),
+                label: format!("{p} (not found)"),
             }
         };
     }
     let mut chosen: Vec<String> = names.iter().filter(|n| is_physical(n)).cloned().collect();
     chosen.sort();
     let label = match chosen.len() {
-        0 => "cap interfície física".to_string(),
+        0 => "no physical interface".to_string(),
         1 => chosen[0].clone(),
-        n => format!("{n} físiques"),
+        n => format!("{n} physical"),
     };
     NetSelection {
         names: chosen,

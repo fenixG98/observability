@@ -8,16 +8,16 @@ use observability::probe::report;
 fn report_lists_every_subsystem() {
     let r = report(&sample_snapshot());
     for needle in [
-        "cpu: Intel(R) Core(TM) Ultra 5 125H · 14 fils · 34% · 3100 MHz",
-        "memòria: 16.0G",
+        "cpu: Intel(R) Core(TM) Ultra 5 125H · 14 threads · 34% · 3100 MHz",
+        "memory: 16.0G",
         "apps 6.2G",
-        "[1] Meteor Lake-P [Intel Graphics] (integrada) ús 42%",
-        "motors: render 42%, video 8%",
+        "[1] Meteor Lake-P [Intel Graphics] (integrated) usage 42%",
+        "engines: render 42%, video 8%",
         "CPU 68°C",
-        "xarxa: enp0s31f6 ↓ 12.4 MB/s ↑ 1.1 MB/s",
-        "disc: /dev/mapper/data",
+        "network: enp0s31f6 ↓ 12.4 MB/s ↑ 1.1 MB/s",
+        "disk: /dev/mapper/data",
         "/ 312.0G/472.0G",
-        "processos: 5 (amb ús de GPU: 3)",
+        "processes: 5 (using the GPU: 3)",
     ] {
         assert!(r.contains(needle), "falta «{needle}»\n{r}");
     }
@@ -27,18 +27,18 @@ fn report_lists_every_subsystem() {
 fn report_shows_unavailable_reasons() {
     let mut s = sample_snapshot();
     if let Avail::Ok(g) = &mut s.gpus {
-        g[0].util = Avail::Unavailable("cal permís: sudo setcap cap_perfmon=ep /x".into());
+        g[0].util = Avail::Unavailable("permission needed: sudo setcap cap_perfmon=ep /x".into());
     }
-    s.temps = Avail::Unavailable("no s'ha trobat cap sensor hwmon".into());
+    s.temps = Avail::Unavailable("no hwmon sensor found".into());
     s.procs = None;
     let r = report(&s);
     assert!(
-        r.contains("ús NO DISPONIBLE: cal permís: sudo setcap cap_perfmon=ep /x"),
+        r.contains("usage NOT AVAILABLE: permission needed: sudo setcap cap_perfmon=ep /x"),
         "{r}"
     );
     assert!(
-        r.contains("temperatures: NO DISPONIBLE: no s'ha trobat cap sensor hwmon"),
+        r.contains("temperatures: NOT AVAILABLE: no hwmon sensor found"),
         "{r}"
     );
-    assert!(r.contains("processos: no llegits"), "{r}");
+    assert!(r.contains("processes: not read"), "{r}");
 }

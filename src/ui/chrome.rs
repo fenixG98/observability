@@ -21,7 +21,7 @@ pub fn tab_bar(f: &mut Frame, area: Rect, app: &App, theme: &Theme) {
         " obstui ",
         Style::new().fg(theme.accent).add_modifier(Modifier::BOLD),
     )];
-    for (i, (tab, name)) in [(Tab::Dashboard, "Dashboard"), (Tab::Processes, "Processos")]
+    for (i, (tab, name)) in [(Tab::Dashboard, "Dashboard"), (Tab::Processes, "Processes")]
         .into_iter()
         .enumerate()
     {
@@ -70,13 +70,13 @@ pub fn tab_bar(f: &mut Frame, area: Rect, app: &App, theme: &Theme) {
 }
 
 const HINTS: [(&str, &str); 7] = [
-    ("1-2", "pestanya"),
+    ("1-2", "tab"),
     ("hjkl", "focus"),
     ("z", "zoom"),
-    (":", "ordre"),
-    ("/", "filtre"),
-    ("?", "ajuda"),
-    ("q", "sortir"),
+    (":", "command"),
+    ("/", "filter"),
+    ("?", "help"),
+    ("q", "quit"),
 ];
 
 fn input_line(prefix: &str, input: &str, theme: &Theme) -> Vec<Span<'static>> {
@@ -111,7 +111,7 @@ pub fn status_line(f: &mut Frame, area: Rect, app: &App, theme: &Theme) {
         Mode::Filter { input } => {
             let mut spans = input_line("/", input, theme);
             spans.push(Span::styled(
-                "  enter aplica · esc esborra",
+                "  enter apply · esc clear",
                 Style::new().fg(theme.dim),
             ));
             Line::from(spans)
@@ -137,7 +137,7 @@ pub fn status_line(f: &mut Frame, area: Rect, app: &App, theme: &Theme) {
     let left_width = width_u16(line.width());
     f.render_widget(Paragraph::new(line), area);
     if matches!(app.mode, Mode::Normal) {
-        let right = format!("refresc {} ms ", app.refresh.as_millis());
+        let right = format!("refresh {} ms ", app.refresh.as_millis());
         if left_width.saturating_add(width_u16(right.chars().count())) < area.width {
             f.render_widget(
                 Paragraph::new(
@@ -161,24 +161,24 @@ pub fn centered(area: Rect, w: u16, h: u16) -> Rect {
 }
 
 const HELP: [(&str, &str); 18] = [
-    ("1 / 2", "pestanya Dashboard / Processos"),
-    ("n / p", "pestanya següent / anterior"),
-    ("h j k l, fletxes", "moure el focus entre panells"),
-    ("z", "zoom del panell actiu"),
-    ("g", "següent GPU"),
-    ("j / k (processos)", "moure la selecció"),
-    ("x", "matar el procés seleccionat"),
-    ("/", "filtrar processos"),
-    (":", "mode d'ordres (Tab completa)"),
-    ("?", "aquesta ajuda"),
-    ("q, ctrl+c", "sortir"),
+    ("1 / 2", "Dashboard / Processes tab"),
+    ("n / p", "next / previous tab"),
+    ("h j k l, arrows", "move focus between panels"),
+    ("z", "zoom the active panel"),
+    ("g", "next GPU"),
+    ("j / k (processes)", "move the selection"),
+    ("x", "kill the selected process"),
+    ("/", "filter processes"),
+    (":", "command mode (Tab completes)"),
+    ("?", "this help"),
+    ("q, ctrl+c", "quit"),
     ("", ""),
-    (":dash  :proc", "canviar de pestanya"),
-    (":sort cpu|mem|gpu|pid|name", "ordenar processos"),
-    (":filter <text>", "filtrar (sense text = treure)"),
-    (":kill <pid>", "matar un procés (demana confirmació)"),
-    (":refresh 500ms", "interval de refresc"),
-    (":gpu <n>  :net <iface|auto>", "triar GPU / interfície"),
+    (":dash  :proc", "switch tab"),
+    (":sort cpu|mem|gpu|pid|name", "sort processes"),
+    (":filter <text>", "filter (no text = clear)"),
+    (":kill <pid>", "kill a process (asks first)"),
+    (":refresh 500ms", "refresh interval"),
+    (":gpu <n>  :net <iface|auto>", "pick GPU / interface"),
 ];
 
 pub fn help_overlay(f: &mut Frame, area: Rect, theme: &Theme) {
@@ -197,7 +197,7 @@ pub fn help_overlay(f: &mut Frame, area: Rect, theme: &Theme) {
         })
         .collect();
     f.render_widget(
-        Paragraph::new(lines).block(theme.panel("AJUDA", "qualsevol tecla tanca", true)),
+        Paragraph::new(lines).block(theme.panel("HELP", "any key closes", true)),
         r,
     );
 }
@@ -207,7 +207,7 @@ pub fn confirm_overlay(f: &mut Frame, area: Rect, pid: u32, name: &str, theme: &
     f.render_widget(Clear, r);
     let lines = vec![
         Line::from(Span::styled(
-            format!("Enviar SIGTERM a {name} ({pid})?"),
+            format!("Send SIGTERM to {name} ({pid})?"),
             Style::new().fg(theme.fg),
         )),
         Line::from(""),
@@ -216,16 +216,16 @@ pub fn confirm_overlay(f: &mut Frame, area: Rect, pid: u32, name: &str, theme: &
                 "s",
                 Style::new().fg(theme.warm).add_modifier(Modifier::BOLD),
             ),
-            Span::styled(" / enter: sí     ", Style::new().fg(theme.dim)),
+            Span::styled(" / enter: yes     ", Style::new().fg(theme.dim)),
             Span::styled(
-                "qualsevol altra",
+                "any other",
                 Style::new().fg(theme.warm).add_modifier(Modifier::BOLD),
             ),
             Span::styled(": no", Style::new().fg(theme.dim)),
         ]),
     ];
     f.render_widget(
-        Paragraph::new(lines).block(theme.panel("CONFIRMAR", "", true)),
+        Paragraph::new(lines).block(theme.panel("CONFIRM", "", true)),
         r,
     );
 }

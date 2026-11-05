@@ -19,7 +19,7 @@ impl NvidiaGpu {
         let nvml = Nvml::init().map_err(|e| e.to_string())?;
         let count = nvml.device_count().map_err(|e| e.to_string())?;
         if count == 0 {
-            return Err("cap dispositiu NVIDIA".into());
+            return Err("no NVIDIA device".into());
         }
         Ok(NvidiaGpu {
             nvml,

@@ -14,7 +14,7 @@ fn full_screen_dashboard() {
     let app = sample_app(60);
     let text = render_text(122, 38, |f| ui::draw(f, &app, &theme()));
     assert!(text.lines().next().unwrap().contains("obstui"));
-    assert!(text.contains("HISTORIAL CPU · GPU"));
+    assert!(text.contains("HISTORY CPU · GPU"));
     assert!(text.lines().last().unwrap().contains("hjkl focus"));
 }
 
@@ -22,8 +22,8 @@ fn full_screen_dashboard() {
 fn small_terminal_uses_compact_view() {
     let app = sample_app(10);
     let text = render_text(90, 24, |f| ui::draw(f, &app, &theme()));
-    assert!(text.contains("RESUM"));
-    assert!(!text.contains("HISTORIAL"));
+    assert!(text.contains("SUMMARY"));
+    assert!(!text.contains("HISTORY"));
 }
 
 #[test]
@@ -31,15 +31,15 @@ fn processes_tab_and_overlays() {
     let mut app = sample_app(5);
     app.apply_action(Action::Tab(1));
     let text = render_text(122, 38, |f| ui::draw(f, &app, &theme()));
-    assert!(text.contains("PROCESSOS"));
+    assert!(text.contains("PROCESSES"));
     app.mode = Mode::Help;
-    assert!(render_text(122, 38, |f| ui::draw(f, &app, &theme())).contains("AJUDA"));
+    assert!(render_text(122, 38, |f| ui::draw(f, &app, &theme())).contains("HELP"));
     app.mode = Mode::ConfirmKill {
         pid: 4412,
         name: "firefox".into(),
     };
     assert!(
-        render_text(122, 38, |f| ui::draw(f, &app, &theme())).contains("Enviar SIGTERM a firefox")
+        render_text(122, 38, |f| ui::draw(f, &app, &theme())).contains("Send SIGTERM to firefox")
     );
     app.mode = Mode::Command {
         input: "proc".into(),

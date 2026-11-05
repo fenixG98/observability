@@ -42,7 +42,7 @@ pub fn parse_key(s: &str) -> Result<KeySpec, String> {
             let mut chars = rest.chars();
             match (chars.next(), chars.next()) {
                 (Some(c), None) => KeyCode::Char(if ctrl { c.to_ascii_lowercase() } else { c }),
-                _ => return Err(format!("tecla desconeguda: \"{s}\"")),
+                _ => return Err(format!("unknown key: \"{s}\"")),
             }
         }
     };
@@ -124,7 +124,7 @@ impl KeyMap {
         for (text, action) in pairs {
             let spec = parse_key(text)?;
             if bindings.iter().any(|(s, _)| *s == spec) {
-                return Err(format!("tecla repetida a la configuració: \"{text}\""));
+                return Err(format!("key bound twice in the config: \"{text}\""));
             }
             bindings.push((spec, action));
         }

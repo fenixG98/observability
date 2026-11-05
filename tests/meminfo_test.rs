@@ -24,8 +24,8 @@ fn parses_linux_meminfo_like_htop() {
     assert_eq!(by("cache").bytes, 4_000_000 * kib);
     assert_eq!(by("cache").kind, MemKind::Reclaimable);
     assert_eq!(by("buffers").bytes, 500_000 * kib);
-    assert_eq!(by("lliure").bytes, 4_000_000 * kib);
-    assert_eq!(by("lliure").kind, MemKind::Free);
+    assert_eq!(by("free").bytes, 4_000_000 * kib);
+    assert_eq!(by("free").kind, MemKind::Free);
     assert_eq!(m.swap_used, 1_000_000 * kib);
     assert_eq!(m.swap_total, 8_000_000 * kib);
     assert!((m.used_fraction() - 0.46875).abs() < 1e-9);
@@ -60,9 +60,9 @@ fn macos_segments_add_up_to_total() {
         vec![
             ("apps", 35),
             ("wired", 10),
-            ("comprimida", 5),
+            ("compressed", 5),
             ("cache", 20),
-            ("lliure", 30)
+            ("free", 30)
         ]
     );
     assert_eq!(m.segments.iter().map(|s| s.bytes).sum::<u64>(), 100);

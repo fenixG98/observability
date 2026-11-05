@@ -43,8 +43,8 @@ fn x_axis_marks_relative_time_up_to_now() {
             .unwrap_or_else(|| panic!("falta {s}: {labels}"))
     };
     assert!(pos("-60s") < pos("-45s") && pos("-45s") < pos("-30s"));
-    assert!(pos("-30s") < pos("-15s") && pos("-15s") < pos("ara"));
-    assert!(labels.trim_end().ends_with("ara"));
+    assert!(pos("-30s") < pos("-15s") && pos("-15s") < pos("now"));
+    assert!(labels.trim_end().ends_with("now"));
 }
 
 #[test]
@@ -55,7 +55,7 @@ fn x_axis_on_narrow_chart_keeps_only_the_ends() {
     x_axis(&mut buf, area, Rect::new(1, 0, 12, 1), 1.0, &theme);
     let labels = row(&buf, 1);
     assert!(
-        labels.contains("-11s") && labels.contains("ara"),
+        labels.contains("-11s") && labels.contains("now"),
         "{labels}"
     );
     assert_eq!(labels.matches('s').count(), 1, "{labels}");
@@ -78,9 +78,9 @@ fn x_axis_ticks_land_on_round_times_at_any_width() {
         );
         let labels = row(&buf, 1);
         let expected: &[&str] = if w >= 40 {
-            &["-60s", "-45s", "-30s", "-15s", "ara"]
+            &["-60s", "-45s", "-30s", "-15s", "now"]
         } else {
-            &["-60s", "-30s", "ara"]
+            &["-60s", "-30s", "now"]
         };
         for l in expected {
             assert!(labels.contains(l), "width {w}: missing {l} in «{labels}»");
@@ -90,7 +90,7 @@ fn x_axis_ticks_land_on_round_times_at_any_width() {
 
 #[test]
 fn time_labels() {
-    assert_eq!(time_label(0.0), "ara");
+    assert_eq!(time_label(0.0), "now");
     assert_eq!(time_label(45.0), "-45s");
     assert_eq!(time_label(90.0), "-90s");
     assert_eq!(time_label(300.0), "-5m");

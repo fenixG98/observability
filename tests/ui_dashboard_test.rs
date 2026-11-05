@@ -15,18 +15,18 @@ fn dashboard_layout_b_shows_every_panel() {
     let text = render_text(122, 36, |f| dashboard::render(f, f.area(), &app, &theme()));
     for needle in [
         "CPU",
-        "MEMÒRIA",
+        "MEMORY",
         "GPU",
-        "DISC /",
-        "HISTORIAL CPU · GPU",
+        "DISK /",
+        "HISTORY CPU · GPU",
         "TEMPERATURES",
-        "XARXA · enp0s31f6",
-        "DISC I/O",
+        "NETWORK · enp0s31f6",
+        "DISK I/O",
     ] {
         assert!(text.contains(needle), "falta {needle}\n{text}");
     }
     assert!(text.contains("Core Ultra 5 125H"));
-    assert!(text.contains("14 fils · 3.1 GHz"));
+    assert!(text.contains("14 threads · 3.1 GHz"));
     assert!(text.contains("66%"), "disk 312/472");
     assert!(text.contains("68°C"));
     assert!(text.contains("↓ ") && text.contains("↑ "), "{text}");
@@ -38,7 +38,8 @@ fn gpu_panel_explains_missing_permission() {
     let mut app = sample_app(2);
     if let Avail::Ok(g) = &mut app.snapshot.gpus {
         g[0].util = Avail::Unavailable(
-            "cal permís per llegir la GPU Intel: sudo setcap cap_perfmon=ep /usr/bin/obstui".into(),
+            "permission needed to read the Intel GPU: sudo setcap cap_perfmon=ep /usr/bin/obstui"
+                .into(),
         );
     }
     let text = render_text(122, 36, |f| dashboard::render(f, f.area(), &app, &theme()));
@@ -49,11 +50,11 @@ fn gpu_panel_explains_missing_permission() {
 #[test]
 fn unavailable_temps_and_no_gpu_show_reasons() {
     let mut app = sample_app(2);
-    app.snapshot.temps = Avail::Unavailable("no s'ha trobat cap sensor hwmon".into());
-    app.snapshot.gpus = Avail::Unavailable("no s'ha detectat cap GPU".into());
+    app.snapshot.temps = Avail::Unavailable("no hwmon sensor found".into());
+    app.snapshot.gpus = Avail::Unavailable("no GPU detected".into());
     let text = render_text(122, 36, |f| dashboard::render(f, f.area(), &app, &theme()));
-    assert!(text.contains("no s'ha trobat cap sensor hwmon"));
-    assert!(text.contains("no s'ha detectat cap GPU"));
+    assert!(text.contains("no hwmon sensor found"));
+    assert!(text.contains("no GPU detected"));
 }
 
 #[test]
@@ -62,9 +63,9 @@ fn zoom_renders_only_the_focused_panel_with_legend() {
     app.focus = Panel::MemDonut;
     app.zoomed = true;
     let text = render_text(122, 36, |f| dashboard::render(f, f.area(), &app, &theme()));
-    assert!(text.contains("MEMÒRIA"));
+    assert!(text.contains("MEMORY"));
     assert!(!text.contains("TEMPERATURES"));
-    for label in ["apps", "cache", "buffers", "lliure"] {
+    for label in ["apps", "cache", "buffers", "free"] {
         assert!(text.contains(label), "missing legend {label}");
     }
 }
@@ -124,7 +125,7 @@ fn panels_keep_inner_padding_and_donut_caption_sits_under_the_circle() {
     }
     let caption = rows
         .iter()
-        .position(|r| r.iter().collect::<String>().contains("14 fils"))
+        .position(|r| r.iter().collect::<String>().contains("14 threads"))
         .expect("caption");
     let last = *pie_rows.last().expect("donut");
     assert!(
@@ -152,7 +153,7 @@ fn short_model_strips_marketing() {
 fn compact_view_fits_80x24() {
     let app = sample_app(30);
     let text = render_text(80, 22, |f| compact::render(f, f.area(), &app, &theme()));
-    for needle in ["RESUM", "CPU", "GPU", "MEM", "SWAP", "DISC", "↓", "↑"] {
+    for needle in ["SUMMARY", "CPU", "GPU", "MEM", "SWAP", "DISK", "↓", "↑"] {
         assert!(text.contains(needle), "falta {needle}\n{text}");
     }
     insta::assert_snapshot!(text);
@@ -176,7 +177,7 @@ fn evolution_charts_have_scales_and_time_axis() {
     assert!(text.contains(" 0%┤"), "{text}");
     // Time axis: line with ticks and labels up to «ara» (history, network and disk).
     assert!(text.matches('└').count() >= 3, "{text}");
-    assert!(text.matches("ara").count() >= 3, "{text}");
+    assert!(text.matches("now").count() >= 3, "{text}");
     assert!(text.contains("-30s") || text.contains("-60s"), "{text}");
     // Network and disk: scale with compact speed and the zero.
     assert!(text.contains("   0┤"), "{text}");

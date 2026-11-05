@@ -3,7 +3,7 @@
 use crate::model::TempSensor;
 
 /// Display order of the known groups; the rest come after, by temperature.
-const ORDER: [&str; 5] = ["CPU", "Nuclis", "SoC", "GPU", "Disc"];
+const ORDER: [&str; 5] = ["CPU", "Cores", "SoC", "GPU", "Disk"];
 
 /// Visible group for a raw sensor label.
 pub fn group_label(label: &str) -> String {
@@ -18,7 +18,7 @@ pub fn group_label(label: &str) -> String {
     {
         "CPU"
     } else if l.starts_with("coretemp core") {
-        "Nuclis"
+        "Cores"
     } else if l.starts_with("amdgpu")
         || l.starts_with("nouveau")
         || l.starts_with("radeon")
@@ -26,7 +26,7 @@ pub fn group_label(label: &str) -> String {
     {
         "GPU"
     } else if l.starts_with("nvme") || l.starts_with("nand") || l.contains("ssd") {
-        "Disc"
+        "Disk"
     } else if l.starts_with("iwlwifi")
         || l.starts_with("ath")
         || l.starts_with("mt7")

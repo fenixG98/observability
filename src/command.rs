@@ -55,48 +55,48 @@ pub fn parse(input: &str) -> Result<Command, String> {
         None => (input, None),
     };
     match name {
-        "" => Err("ordre buida".into()),
+        "" => Err("empty command".into()),
         "dash" => Ok(Command::Dash),
         "proc" => Ok(Command::Proc),
         "q" | "quit" => Ok(Command::Quit),
         "sort" => {
-            let a = arg.ok_or("ús: :sort cpu|mem|gpu|pid|name")?;
+            let a = arg.ok_or("usage: :sort cpu|mem|gpu|pid|name")?;
             SortKey::ALL
                 .iter()
                 .find(|(n, _)| *n == a)
                 .map(|(_, k)| Command::Sort(*k))
-                .ok_or_else(|| format!("criteri desconegut: {a} (cpu|mem|gpu|pid|name)"))
+                .ok_or_else(|| format!("unknown sort key: {a} (cpu|mem|gpu|pid|name)"))
         }
         "filter" => Ok(Command::Filter(arg.map(str::to_string))),
         "kill" => {
-            let a = arg.ok_or("ús: :kill <pid>")?;
+            let a = arg.ok_or("usage: :kill <pid>")?;
             match a.parse::<u32>() {
                 Ok(pid) if (1..=i32::MAX as u32).contains(&pid) => Ok(Command::Kill(pid)),
-                _ => Err(format!("pid invàlid: {a} (1..={})", i32::MAX)),
+                _ => Err(format!("invalid pid: {a} (1..={})", i32::MAX)),
             }
         }
         "refresh" => {
-            let a = arg.ok_or("ús: :refresh <durada> (p. ex. 500ms, 2s)")?;
+            let a = arg.ok_or("usage: :refresh <duration> (e.g. 500ms, 2s)")?;
             parse_duration(a).map(Command::Refresh)
         }
         "gpu" => {
-            let a = arg.ok_or("ús: :gpu <n>")?;
+            let a = arg.ok_or("usage: :gpu <n>")?;
             match a.parse::<usize>() {
                 Ok(n) if n >= 1 => Ok(Command::Gpu(n - 1)),
-                _ => Err(format!("número de GPU invàlid: {a}")),
+                _ => Err(format!("invalid GPU number: {a}")),
             }
         }
         "net" => Ok(Command::Net(
             arg.filter(|a| *a != "auto").map(str::to_string),
         )),
-        other => Err(format!("ordre desconeguda: {other}")),
+        other => Err(format!("unknown command: {other}")),
     }
 }
 
 /// "500ms", "2s", "1.5s". Allowed range: 100ms..=60s.
 pub fn parse_duration(s: &str) -> Result<Duration, String> {
     let s = s.trim();
-    let invalid = || format!("durada invàlida: {s} (usa ms o s)");
+    let invalid = || format!("invalid duration: {s} (use ms or s)");
     let ms: u64 = if let Some(n) = s.strip_suffix("ms") {
         n.trim().parse().map_err(|_| invalid())?
     } else if let Some(n) = s.strip_suffix('s') {
@@ -109,7 +109,7 @@ pub fn parse_duration(s: &str) -> Result<Duration, String> {
         return Err(invalid());
     };
     if !(100..=60_000).contains(&ms) {
-        return Err("la durada ha d'estar entre 100ms i 60s".into());
+        return Err("duration must be between 100ms and 60s".into());
     }
     Ok(Duration::from_millis(ms))
 }

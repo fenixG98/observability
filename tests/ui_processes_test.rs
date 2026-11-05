@@ -17,16 +17,16 @@ fn processes_tab_shows_table_pie_and_detail() {
     app.on_snapshot(sample_snapshot());
     let text = render_text(122, 30, |f| processes::render(f, f.area(), &app, &theme()));
     for needle in [
-        "PROCESSOS",
-        "5 · ordre: cpu · filtre: –",
+        "PROCESSES",
+        "5 · sort: cpu · filter: –",
         "PID",
         "firefox",
         "rust-analyzer",
-        "QUI GASTA LA CPU",
-        "altres",
+        "TOP CPU USERS",
+        "other",
         "rust-analyzer · 9921",
         "/usr/bin/rust-analyzer",
-        "fa 3h 12m",
+        "for 3h 12m",
     ] {
         assert!(text.contains(needle), "falta {needle}\n{text}");
     }
@@ -40,7 +40,7 @@ fn shows_loading_message_before_first_process_sample() {
     let mut app = sample_app(1);
     app.snapshot.procs = None;
     let text = render_text(122, 30, |f| processes::render(f, f.area(), &app, &theme()));
-    assert!(text.contains("carregant processos"));
+    assert!(text.contains("loading processes"));
 }
 
 #[test]
@@ -50,8 +50,8 @@ fn zoom_shows_only_the_focused_panel() {
     app.focus = Panel::ProcPie;
     app.zoomed = true;
     let text = render_text(122, 30, |f| processes::render(f, f.area(), &app, &theme()));
-    assert!(text.contains("QUI GASTA LA CPU"));
-    assert!(!text.contains("PROCESSOS"));
+    assert!(text.contains("TOP CPU USERS"));
+    assert!(!text.contains("PROCESSES"));
 }
 
 #[test]
@@ -72,5 +72,5 @@ fn missing_thread_count_shows_dash() {
         }
     }
     let text = render_text(122, 30, |f| processes::render(f, f.area(), &app, &theme()));
-    assert!(text.contains("fils –"), "{text}");
+    assert!(text.contains("threads –"), "{text}");
 }

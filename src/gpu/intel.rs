@@ -44,7 +44,7 @@ pub fn engine_label(event: &str) -> String {
 
 pub fn permission_message(exe: &Path) -> String {
     format!(
-        "cal permís per llegir la GPU Intel: sudo setcap cap_perfmon=ep {} (es perd en recompilar o reinstal·lar)",
+        "permission needed to read the Intel GPU: sudo setcap cap_perfmon=ep {} (lost on rebuild or reinstall)",
         exe.display()
     )
 }
@@ -53,8 +53,8 @@ pub fn permission_message(exe: &Path) -> String {
 pub fn open_error_reason(err: &io::Error, exe: &Path) -> String {
     match err.raw_os_error() {
         Some(libc::EACCES) | Some(libc::EPERM) => permission_message(exe),
-        Some(libc::ENOENT) | Some(libc::ENODEV) => format!("PMU i915 no disponible ({err})"),
-        _ => format!("error obrint el PMU i915: {err}"),
+        Some(libc::ENOENT) | Some(libc::ENODEV) => format!("i915 PMU not available ({err})"),
+        _ => format!("error opening the i915 PMU: {err}"),
     }
 }
 
@@ -204,15 +204,15 @@ impl IntelGpu {
         let state = if card.driver == "i915" {
             match find_pmu(Path::new("/sys/bus/event_source/devices")) {
                 Some(pmu) => open_counters(&pmu, &exe),
-                None => IntelState::Failed(
-                    "no s'ha trobat el PMU i915 a /sys/bus/event_source/devices".into(),
-                ),
+                None => {
+                    IntelState::Failed("i915 PMU not found in /sys/bus/event_source/devices".into())
+                }
             }
         } else {
             IntelState::Failed(format!(
-                "driver {}: la lectura d'ús encara no està suportada (només i915)",
+                "driver {}: usage reading not supported yet (i915 only)",
                 if card.driver.is_empty() {
-                    "desconegut"
+                    "unknown"
                 } else {
                     &card.driver
                 }
@@ -251,7 +251,7 @@ fn open_counters(pmu: &Path, exe: &Path) -> IntelState {
         .ok()
         .and_then(|s| s.trim().parse::<u32>().ok())
     else {
-        return IntelState::Failed("no s'ha pogut llegir el tipus del PMU i915".into());
+        return IntelState::Failed("could not read the i915 PMU type".into());
     };
     let cpu = fs::read_to_string(pmu.join("cpumask"))
         .ok()
@@ -282,7 +282,7 @@ fn open_counters(pmu: &Path, exe: &Path) -> IntelState {
     if counters.is_empty() {
         return IntelState::Failed(match first_err {
             Some(e) => open_error_reason(&e, exe),
-            None => "el PMU i915 no exposa cap comptador *-busy".into(),
+            None => "the i915 PMU exposes no *-busy counter".into(),
         });
     }
     IntelState::Ready {

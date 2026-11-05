@@ -6,16 +6,16 @@ use crate::model::{Avail, Snapshot, human_bytes, human_duration, human_rate};
 
 pub fn report(s: &Snapshot) -> String {
     let mut o = String::new();
-    let _ = writeln!(o, "obstui {} — diagnòstic", env!("CARGO_PKG_VERSION"));
+    let _ = writeln!(o, "obstui {} — diagnostics", env!("CARGO_PKG_VERSION"));
     let _ = writeln!(
         o,
-        "host: {} (en marxa {})",
+        "host: {} (up {})",
         s.host.hostname,
         human_duration(s.host.uptime_secs)
     );
     let _ = writeln!(
         o,
-        "cpu: {} · {} fils · {:.0}% · {} MHz",
+        "cpu: {} · {} threads · {:.0}% · {} MHz",
         s.cpu.model,
         s.cpu.per_core.len(),
         s.cpu.total,
@@ -29,7 +29,7 @@ pub fn report(s: &Snapshot) -> String {
         .collect();
     let _ = writeln!(
         o,
-        "memòria: {} · {} · swap {}/{}",
+        "memory: {} · {} · swap {}/{}",
         human_bytes(s.mem.total),
         segs.join(", "),
         human_bytes(s.mem.swap_used),
@@ -37,15 +37,15 @@ pub fn report(s: &Snapshot) -> String {
     );
     match &s.gpus {
         Avail::Unavailable(r) => {
-            let _ = writeln!(o, "gpu: NO DISPONIBLE: {r}");
+            let _ = writeln!(o, "gpu: NOT AVAILABLE: {r}");
         }
         Avail::Ok(list) => {
             let _ = writeln!(o, "gpu:");
             for (i, g) in list.iter().enumerate() {
-                let kind = if g.discrete { "dedicada" } else { "integrada" };
+                let kind = if g.discrete { "discrete" } else { "integrated" };
                 let util = match &g.util {
-                    Avail::Ok(u) => format!("ús {u:.0}%"),
-                    Avail::Unavailable(r) => format!("ús NO DISPONIBLE: {r}"),
+                    Avail::Ok(u) => format!("usage {u:.0}%"),
+                    Avail::Unavailable(r) => format!("usage NOT AVAILABLE: {r}"),
                 };
                 let mut extra = Vec::new();
                 if let (Some(u), Some(t)) = (g.vram_used, g.vram_total) {
@@ -69,14 +69,14 @@ pub fn report(s: &Snapshot) -> String {
                         .iter()
                         .map(|(e, v)| format!("{e} {v:.0}%"))
                         .collect();
-                    let _ = writeln!(o, "      motors: {}", engines.join(", "));
+                    let _ = writeln!(o, "      engines: {}", engines.join(", "));
                 }
             }
         }
     }
     match &s.temps {
         Avail::Unavailable(r) => {
-            let _ = writeln!(o, "temperatures: NO DISPONIBLE: {r}");
+            let _ = writeln!(o, "temperatures: NOT AVAILABLE: {r}");
         }
         Avail::Ok(list) => {
             let items: Vec<String> = list
@@ -88,7 +88,7 @@ pub fn report(s: &Snapshot) -> String {
     }
     let _ = writeln!(
         o,
-        "xarxa: {} ↓ {} ↑ {}",
+        "network: {} ↓ {} ↑ {}",
         s.net.iface_label,
         human_rate(s.net.rx_bps),
         human_rate(s.net.tx_bps)
@@ -108,7 +108,7 @@ pub fn report(s: &Snapshot) -> String {
         .collect();
     let _ = writeln!(
         o,
-        "disc: {} · {} · llegir {} · escriure {}",
+        "disk: {} · {} · read {} · write {}",
         s.disk.device,
         mounts.join(", "),
         human_rate(s.disk.read_bps),
@@ -116,11 +116,11 @@ pub fn report(s: &Snapshot) -> String {
     );
     match &s.procs {
         None => {
-            let _ = writeln!(o, "processos: no llegits");
+            let _ = writeln!(o, "processes: not read");
         }
         Some(p) => {
             let with_gpu = p.iter().filter(|x| x.gpu.is_some()).count();
-            let _ = writeln!(o, "processos: {} (amb ús de GPU: {with_gpu})", p.len());
+            let _ = writeln!(o, "processes: {} (using the GPU: {with_gpu})", p.len());
         }
     }
     o

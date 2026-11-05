@@ -26,8 +26,8 @@ fn groups_real_linux_labels() {
         pairs(&group_sensors(&input)),
         vec![
             ("CPU".into(), 76.0),
-            ("Nuclis".into(), 76.0),
-            ("Disc".into(), 43.85),
+            ("Cores".into(), 76.0),
+            ("Disk".into(), 43.85),
             ("ACPI".into(), 74.0),
             ("WiFi".into(), 62.0),
         ]
@@ -49,7 +49,7 @@ fn groups_apple_silicon_and_gpu_labels() {
         vec![
             ("SoC".into(), 48.0),
             ("GPU".into(), 41.0),
-            ("Disc".into(), 35.0),
+            ("Disk".into(), 35.0),
             ("Dispositius".into(), 38.0),
             ("Bateria".into(), 30.0),
         ]

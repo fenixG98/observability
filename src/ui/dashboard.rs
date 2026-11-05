@@ -216,12 +216,12 @@ fn cpu_donut(f: &mut Frame, area: Rect, app: &App, theme: &Theme, focused: bool)
     let t = (cpu.total as f64 / 100.0).clamp(0.0, 1.0);
     let sub = if cpu.freq_mhz > 0 {
         format!(
-            "{} fils · {:.1} GHz",
+            "{} threads · {:.1} GHz",
             cpu.per_core.len(),
             cpu.freq_mhz as f64 / 1000.0
         )
     } else {
-        format!("{} fils", cpu.per_core.len())
+        format!("{} threads", cpu.per_core.len())
     };
     let segments = [(t, theme.level(t)), (1.0 - t, theme.empty)];
     donut(
@@ -283,7 +283,7 @@ fn mem_donut(f: &mut Frame, area: Rect, app: &App, theme: &Theme, focused: bool)
     donut(
         f,
         area,
-        theme.panel("MEMÒRIA", right, focused),
+        theme.panel("MEMORY", right, focused),
         Donut {
             segments: &segments,
             center: format!("{:.0}%", mem.used_fraction() * 100.0),
@@ -329,7 +329,7 @@ fn gpu_donut(f: &mut Frame, area: Rect, app: &App, theme: &Theme, focused: bool)
             f,
             area,
             theme.panel("GPU", right, focused),
-            "no s'ha detectat cap GPU",
+            "no GPU detected",
             theme,
         ),
         (Avail::Ok(_), Some(g)) => match &g.util {
@@ -370,8 +370,8 @@ fn disk_donut(f: &mut Frame, area: Rect, app: &App, theme: &Theme, focused: bool
         message(
             f,
             area,
-            theme.panel("DISC", "", focused),
-            "cap disc detectat",
+            theme.panel("DISK", "", focused),
+            "no disk detected",
             theme,
         );
         return;
@@ -408,7 +408,7 @@ fn disk_donut(f: &mut Frame, area: Rect, app: &App, theme: &Theme, focused: bool
     donut(
         f,
         area,
-        theme.panel(format!("DISC {}", m.mount), "", focused),
+        theme.panel(format!("DISK {}", m.mount), "", focused),
         Donut {
             segments: &segments,
             center: format!("{:.0}%", t * 100.0),
@@ -451,7 +451,7 @@ fn core_bars(f: &mut Frame, area: Rect, per_core: &[f32], theme: &Theme) {
 
 fn history(f: &mut Frame, area: Rect, app: &App, theme: &Theme, focused: bool) {
     let block = theme.panel(
-        "HISTORIAL CPU · GPU",
+        "HISTORY CPU · GPU",
         format!("{}s", app.history_secs),
         focused,
     );
@@ -525,7 +525,7 @@ fn history(f: &mut Frame, area: Rect, app: &App, theme: &Theme, focused: bool) {
                 theme.fg,
             );
         }
-        _ => corner_label(f, gpu_a, "gpu: sense dades d'ús", theme.dim),
+        _ => corner_label(f, gpu_a, "gpu: no usage data", theme.dim),
     }
     let bars = Rect::new(gpu_a.x, bars.y, gpu_a.width, bars.height);
     core_bars(f, bars, &app.snapshot.cpu.per_core, theme);
@@ -569,7 +569,7 @@ fn temps(f: &mut Frame, area: Rect, app: &App, theme: &Theme, focused: bool) {
 
 fn net(f: &mut Frame, area: Rect, app: &App, theme: &Theme, focused: bool) {
     let n = &app.snapshot.net;
-    let block = theme.panel(format!("XARXA · {}", n.iface_label), "", focused);
+    let block = theme.panel(format!("NETWORK · {}", n.iface_label), "", focused);
     let inner = block.inner(area);
     f.render_widget(block, area);
     if inner.height < 2 || inner.width < 14 {
@@ -627,26 +627,16 @@ fn net(f: &mut Frame, area: Rect, app: &App, theme: &Theme, focused: bool) {
         },
         down,
     );
-    corner_label(
-        f,
-        up,
-        &format!("↓ baixada {}", human_rate(n.rx_bps)),
-        theme.rx,
-    );
+    corner_label(f, up, &format!("↓ down {}", human_rate(n.rx_bps)), theme.rx);
     if down.height > 0 {
         let last = Rect::new(down.x, down.bottom() - 1, down.width, 1);
-        corner_label(
-            f,
-            last,
-            &format!("↑ pujada {}", human_rate(n.tx_bps)),
-            theme.tx,
-        );
+        corner_label(f, last, &format!("↑ up {}", human_rate(n.tx_bps)), theme.tx);
     }
 }
 
 fn disk_io(f: &mut Frame, area: Rect, app: &App, theme: &Theme, focused: bool) {
     let d = &app.snapshot.disk;
-    let block = theme.panel("DISC I/O", truncate(&d.device, 20), focused);
+    let block = theme.panel("DISK I/O", truncate(&d.device, 20), focused);
     let inner = block.inner(area);
     f.render_widget(block, area);
     if inner.height < 2 || inner.width < 12 {
@@ -667,14 +657,14 @@ fn disk_io(f: &mut Frame, area: Rect, app: &App, theme: &Theme, focused: bool) {
     let rows = [
         (
             Rect::new(inner.x, inner.y, inner.width, inner.height - half - sep),
-            "llegir",
+            "read",
             d.read_bps,
             &app.hist.disk_r,
             theme.read,
         ),
         (
             Rect::new(inner.x, inner.y + inner.height - half, inner.width, half),
-            "escriure",
+            "write",
             d.write_bps,
             &app.hist.disk_w,
             theme.write,
@@ -690,7 +680,7 @@ fn disk_io(f: &mut Frame, area: Rect, app: &App, theme: &Theme, focused: bool) {
             (rect.height - 1, format!("{:>4}", 0)),
         ];
         let rect = y_axis(f.buffer_mut(), rect, &marks, theme);
-        if axis_h > 0 && label == "escriure" {
+        if axis_h > 0 && label == "write" {
             x_axis(
                 f.buffer_mut(),
                 time_a,
