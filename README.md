@@ -21,13 +21,47 @@ sample or a key press, and it reads `/proc` directly on Linux.
 
 ## Install
 
-Requires Rust 1.88 or newer.
+guaitop is built from source with Cargo. There are no prebuilt binaries yet.
+
+### 1. Install Rust (1.88 or newer) and a C toolchain
+
+Linux (Debian/Ubuntu shown; on Arch use `sudo pacman -S base-devel curl git`):
 
 ```sh
-cargo install --path . --locked
+sudo apt install build-essential curl git
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+source "$HOME/.cargo/env"
 ```
 
-or `bash bin/deploy/prod.sh`, which does the same and prints the Intel GPU hint below.
+macOS:
+
+```sh
+xcode-select --install
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+source "$HOME/.cargo/env"
+```
+
+If Rust is already installed, `rustup update` brings it up to date.
+
+### 2. Install guaitop
+
+Straight from GitHub:
+
+```sh
+cargo install --git https://github.com/fenixG98/observability --locked
+```
+
+or from a clone:
+
+```sh
+git clone https://github.com/fenixG98/observability
+cd observability
+cargo install --path . --locked    # or: bash bin/deploy/prod.sh
+```
+
+Either way the binary ends up in `~/.cargo/bin/guaitop` (make sure `~/.cargo/bin` is on
+your `PATH`). To update, run the same command again with `--force`; to remove it,
+`cargo uninstall guaitop`.
 
 ### Intel GPU usage (Linux)
 
