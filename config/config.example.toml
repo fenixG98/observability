@@ -1,0 +1,35 @@
+# Copy this file to ~/.config/guaitop/config.toml (Linux)
+# or to ~/Library/Application Support/guaitop/config.toml (macOS).
+# All keys are optional; missing ones take the default value.
+
+refresh_ms = 1000        # 100..=60000
+history_secs = 60        # 10..=3600
+# net_iface = "enp0s31f6"  # default: sum of the physical interfaces
+
+[prefix]
+enabled = false          # true = tmux-style navigation (prefix + key)
+key = "ctrl+b"
+
+[keys]
+tab_dashboard = "1"
+tab_processes = "2"
+next_tab = "n"
+prev_tab = "p"
+left = "h"
+down = "j"
+up = "k"
+right = "l"
+zoom = "z"
+gpu_next = "g"
+command = ":"
+filter = "/"
+help = "?"
+quit = "q"
+kill = "x"
+
+[theme]
+# truecolor = true       # default: detected from $COLORTERM
+
+[temps]
+warm = 60.0
+hot = 80.0

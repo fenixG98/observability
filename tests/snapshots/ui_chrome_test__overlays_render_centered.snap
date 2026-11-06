@@ -1,0 +1,30 @@
+---
+source: tests/ui_chrome_test.rs
+assertion_line: 71
+expression: text
+---
+                                                                                                    
+                                                                                                    
+                                                                                                    
+                                                                                                    
+                                                                                                    
+             ╭ HELP ────────────────────────────────────────────────── any key closes ╮             
+             │ 1 / 2                         Dashboard / Processes tab                │             
+             │ n / p                         next / previous tab                      │             
+             │ h j k l, arrows               move focus between panels                │             
+             │ z                             zoom the active panel                    │             
+             │ g                             next GPU                                 │             
+             │ j / k (processes)             move the selection                       │             
+             │ x                             kill the selected process                │             
+             │ /                             filter processes                         │             
+             │ :                             command mode (Tab completes)             │             
+             │ ?                             this help                                │             
+             │ q, ctrl+c                     quit                                     │             
+             │                                                                        │             
+             │ :dash  :proc                  switch tab                               │             
+             │ :sort cpu|mem|gpu|pid|name    sort processes                           │             
+             │ :filter <text>                filter (no text = clear)                 │             
+             │ :kill <pid>                   kill a process (asks first)              │             
+             │ :refresh 500ms                refresh interval                         │             
+             │ :gpu <n>  :net <iface|auto>   pick GPU / interface                     │             
+             ╰────────────────────────────────────────────────────────────────────────╯

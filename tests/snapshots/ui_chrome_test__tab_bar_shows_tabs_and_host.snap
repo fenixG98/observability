@@ -1,0 +1,5 @@
+---
+source: tests/ui_chrome_test.rs
+expression: text
+---
+ guaitop  1 Dashboard   2 Processes                                              devhost · up 3d 4h · load 1.42 0.98 0.77
