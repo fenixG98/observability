@@ -1,9 +1,9 @@
 mod common;
 
 use common::*;
-use observability::app::Mode;
-use observability::keys::Action;
-use observability::ui::{self, theme::Theme};
+use guaitop::app::Mode;
+use guaitop::keys::Action;
+use guaitop::ui::{self, theme::Theme};
 
 fn theme() -> Theme {
     Theme::new(true, 60.0, 80.0)
@@ -13,7 +13,7 @@ fn theme() -> Theme {
 fn full_screen_dashboard() {
     let app = sample_app(60);
     let text = render_text(122, 38, |f| ui::draw(f, &app, &theme()));
-    assert!(text.lines().next().unwrap().contains("obstui"));
+    assert!(text.lines().next().unwrap().contains("guaitop"));
     assert!(text.contains("HISTORY CPU · GPU"));
     assert!(text.lines().last().unwrap().contains("hjkl focus"));
 }

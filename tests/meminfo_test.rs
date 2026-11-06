@@ -1,5 +1,5 @@
-use observability::collect::meminfo::*;
-use observability::model::MemKind;
+use guaitop::collect::meminfo::*;
+use guaitop::model::MemKind;
 
 const MEMINFO: &str = "MemTotal:       16000000 kB
 MemFree:         4000000 kB

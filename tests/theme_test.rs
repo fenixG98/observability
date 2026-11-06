@@ -1,4 +1,4 @@
-use observability::ui::theme::*;
+use guaitop::ui::theme::*;
 use ratatui::{buffer::Buffer, layout::Rect, style::Color, widgets::Widget};
 
 #[test]

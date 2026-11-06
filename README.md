@@ -1,10 +1,10 @@
-# obstui
+# guaitop
 
 A lightweight resource monitor for the terminal, for Linux and macOS.
 
-`obstui` shows CPU, memory, GPU, temperatures, network, disk and processes in real time,
-with circular charts, history graphs with scaled axes, tmux-style navigation and
-k9s-style `:` commands. It is built to stay out of the way: it sleeps until there is a new
+`guaitop` (from the Catalan *guaitar*, "to keep watch") shows CPU, memory, GPU,
+temperatures, network, disk and processes in real time, with circular charts, history
+graphs with scaled axes, tmux-style navigation and k9s-style `:` commands. It is built to stay out of the way: it sleeps until there is a new
 sample or a key press, and it reads `/proc` directly on Linux.
 
 ## Features
@@ -34,7 +34,7 @@ or `bash bin/deploy/prod.sh`, which does the same and prints the Intel GPU hint 
 Reading Intel GPU usage needs the `CAP_PERFMON` capability on the binary:
 
 ```sh
-sudo setcap cap_perfmon=ep "$(command -v obstui)"
+sudo setcap cap_perfmon=ep "$(command -v guaitop)"
 ```
 
 The capability is lost whenever the binary is rebuilt or reinstalled; the TUI shows the
@@ -43,9 +43,9 @@ exact command when it is missing.
 ## Usage
 
 ```sh
-obstui            # open the interface
-obstui --probe    # print a one-shot diagnostic (CPU, memory, GPU, temperatures...) and exit
-obstui --help
+guaitop            # open the interface
+guaitop --probe    # print a one-shot diagnostic (CPU, memory, GPU, temperatures...) and exit
+guaitop --help
 ```
 
 | Key | Action |
@@ -74,8 +74,8 @@ obstui --help
 ## Configuration
 
 Copy [`config/config.example.toml`](config/config.example.toml) to
-`~/.config/obstui/config.toml` (Linux) or
-`~/Library/Application Support/obstui/config.toml` (macOS). Every key is optional:
+`~/.config/guaitop/config.toml` (Linux) or
+`~/Library/Application Support/guaitop/config.toml` (macOS). Every key is optional:
 refresh interval, history length, network interface, key bindings, an optional tmux-style
 prefix key, truecolor and temperature thresholds.
 

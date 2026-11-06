@@ -6,7 +6,7 @@ use crate::model::{Avail, Snapshot, human_bytes, human_duration, human_rate};
 
 pub fn report(s: &Snapshot) -> String {
     let mut o = String::new();
-    let _ = writeln!(o, "obstui {} — diagnostics", env!("CARGO_PKG_VERSION"));
+    let _ = writeln!(o, "guaitop {} — diagnostics", env!("CARGO_PKG_VERSION"));
     let _ = writeln!(
         o,
         "host: {} (up {})",

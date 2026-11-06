@@ -139,7 +139,7 @@ pub fn kill_process(pid: u32) -> Result<(), String> {
         return Err("pid 1 (init) is protected".into());
     }
     if pid == std::process::id() {
-        return Err("refusing to kill obstui itself".into());
+        return Err("refusing to kill guaitop itself".into());
     }
     // SAFETY: system call with no pointers.
     let r = unsafe { libc::kill(pid as libc::pid_t, libc::SIGTERM) };

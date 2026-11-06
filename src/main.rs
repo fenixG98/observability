@@ -3,18 +3,18 @@ use std::sync::mpsc::{self, Receiver};
 use std::thread;
 use std::time::Duration;
 
-use observability::app::{App, Effect};
-use observability::collect::system::SystemSource;
-use observability::collect::{self, Control, Source};
-use observability::config::{self, Config};
-use observability::keys::{Dispatcher, KeyMap};
-use observability::model::Snapshot;
-use observability::ui::{
+use guaitop::app::{App, Effect};
+use guaitop::collect::system::SystemSource;
+use guaitop::collect::{self, Control, Source};
+use guaitop::config::{self, Config};
+use guaitop::keys::{Dispatcher, KeyMap};
+use guaitop::model::Snapshot;
+use guaitop::ui::{
     self,
     pixels::Graphics,
     theme::{Theme, cell_aspect, detect_truecolor},
 };
-use observability::{gpu, probe};
+use guaitop::{gpu, probe};
 use ratatui::crossterm::event::{self, Event, KeyEventKind};
 
 fn help_text() -> String {
@@ -23,9 +23,9 @@ fn help_text() -> String {
         |p| p.display().to_string(),
     );
     format!(
-        "obstui — terminal resource monitor
+        "guaitop — terminal resource monitor
 
-Usage: obstui [--probe | --version | --help]
+Usage: guaitop [--probe | --version | --help]
 
   (no arguments)     open the interface
   --probe            print a diagnostic (CPU, memory, GPU, temperatures...) and exit
@@ -41,7 +41,7 @@ fn main() {
     let result = match std::env::args().nth(1).as_deref() {
         None => run_tui(),
         Some("--version") | Some("-V") => {
-            println!("obstui {}", env!("CARGO_PKG_VERSION"));
+            println!("guaitop {}", env!("CARGO_PKG_VERSION"));
             Ok(())
         }
         Some("--help") | Some("-h") => {

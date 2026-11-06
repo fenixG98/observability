@@ -1,10 +1,10 @@
-use observability::collect::temps::*;
+use guaitop::collect::temps::*;
 
 fn raw(v: &[(&str, Option<f32>)]) -> Vec<(String, Option<f32>)> {
     v.iter().map(|(l, t)| (l.to_string(), *t)).collect()
 }
 
-fn pairs(s: &[observability::model::TempSensor]) -> Vec<(String, f32)> {
+fn pairs(s: &[guaitop::model::TempSensor]) -> Vec<(String, f32)> {
     s.iter().map(|t| (t.label.clone(), t.celsius)).collect()
 }
 

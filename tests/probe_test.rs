@@ -1,8 +1,8 @@
 mod common;
 
 use common::*;
-use observability::model::Avail;
-use observability::probe::report;
+use guaitop::model::Avail;
+use guaitop::probe::report;
 
 #[test]
 fn report_lists_every_subsystem() {

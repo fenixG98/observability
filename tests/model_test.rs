@@ -1,4 +1,4 @@
-use observability::model::*;
+use guaitop::model::*;
 
 #[test]
 fn avail_accessors() {

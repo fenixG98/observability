@@ -200,7 +200,7 @@ impl IntelGpu {
     /// provider in an error state (to show the reason in the UI).
     pub fn detect(name: &str) -> Option<IntelGpu> {
         let card = find_intel_card(Path::new("/sys/class/drm"))?;
-        let exe = std::env::current_exe().unwrap_or_else(|_| PathBuf::from("obstui"));
+        let exe = std::env::current_exe().unwrap_or_else(|_| PathBuf::from("guaitop"));
         let state = if card.driver == "i915" {
             match find_pmu(Path::new("/sys/bus/event_source/devices")) {
                 Some(pmu) => open_counters(&pmu, &exe),

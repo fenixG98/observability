@@ -1,9 +1,9 @@
 mod common;
 
 use common::*;
-use observability::app::Panel;
-use observability::keys::Action;
-use observability::ui::{processes, theme::Theme};
+use guaitop::app::Panel;
+use guaitop::keys::Action;
+use guaitop::ui::{processes, theme::Theme};
 
 fn theme() -> Theme {
     Theme::new(true, 60.0, 80.0)

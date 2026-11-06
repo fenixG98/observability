@@ -1,5 +1,5 @@
-use observability::config::Config;
-use observability::keys::*;
+use guaitop::config::Config;
+use guaitop::keys::*;
 use ratatui::crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
 fn k(c: char) -> KeyEvent {

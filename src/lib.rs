@@ -1,4 +1,4 @@
-//! observability: local terminal resource monitor.
+//! guaitop: local terminal resource monitor.
 
 pub mod app;
 pub mod collect;

@@ -14,7 +14,7 @@ case "$mode" in
     ;;
   --e2e)
     cargo build --release
-    ./target/release/obstui --probe
+    ./target/release/guaitop --probe
     ;;
   *)
     echo "Usage: bin/test.sh [--back|--front|--e2e]" >&2

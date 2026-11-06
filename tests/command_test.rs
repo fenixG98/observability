@@ -1,4 +1,4 @@
-use observability::command::*;
+use guaitop::command::*;
 use std::time::Duration;
 
 #[test]

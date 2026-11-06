@@ -1,7 +1,7 @@
 use std::process::Command;
 
 fn bin() -> Command {
-    Command::new(env!("CARGO_BIN_EXE_obstui"))
+    Command::new(env!("CARGO_BIN_EXE_guaitop"))
 }
 
 #[test]
@@ -10,7 +10,7 @@ fn version_and_help() {
     assert!(out.status.success());
     assert_eq!(
         String::from_utf8_lossy(&out.stdout).trim(),
-        format!("obstui {}", env!("CARGO_PKG_VERSION"))
+        format!("guaitop {}", env!("CARGO_PKG_VERSION"))
     );
     let out = bin().arg("--help").output().unwrap();
     assert!(String::from_utf8_lossy(&out.stdout).contains("--probe"));

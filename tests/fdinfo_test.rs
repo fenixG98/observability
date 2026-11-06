@@ -1,4 +1,4 @@
-use observability::gpu::fdinfo::*;
+use guaitop::gpu::fdinfo::*;
 use std::collections::HashMap;
 
 const I915: &str = "pos:\t0
@@ -98,7 +98,7 @@ fn scans_only_drm_fds_of_numeric_pids() {
 #[cfg(unix)]
 #[test]
 fn scanner_rereads_known_drm_fds_and_rescans_periodically() {
-    use observability::gpu::fdinfo::DrmScanner;
+    use guaitop::gpu::fdinfo::DrmScanner;
     use std::os::unix::fs::symlink;
     use std::time::Duration;
     let root = std::env::temp_dir().join(format!("obs-proc-scan-{}", std::process::id()));

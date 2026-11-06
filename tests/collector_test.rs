@@ -1,6 +1,6 @@
-use observability::collect::system::SystemSource;
-use observability::collect::{Control, Source, kill_process, spawn};
-use observability::model::Snapshot;
+use guaitop::collect::system::SystemSource;
+use guaitop::collect::{Control, Source, kill_process, spawn};
+use guaitop::model::Snapshot;
 use std::sync::mpsc::RecvTimeoutError;
 use std::time::{Duration, Instant};
 

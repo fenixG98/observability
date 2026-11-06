@@ -1,4 +1,4 @@
-use observability::gpu::sysinfo_gpu::{unavailable_reason, vendor_included};
+use guaitop::gpu::sysinfo_gpu::{unavailable_reason, vendor_included};
 
 #[test]
 fn vendor_filter() {
@@ -23,9 +23,9 @@ fn reasons_are_actionable() {
 
 #[cfg(target_os = "linux")]
 mod intel {
-    use observability::gpu::GpuProvider;
-    use observability::gpu::intel::*;
-    use observability::model::Avail;
+    use guaitop::gpu::GpuProvider;
+    use guaitop::gpu::intel::*;
+    use guaitop::model::Avail;
     use std::path::Path;
 
     fn tmp(name: &str) -> std::path::PathBuf {
@@ -55,11 +55,11 @@ mod intel {
 
     #[test]
     fn permission_errors_give_the_setcap_command() {
-        let exe = Path::new("/home/u/.cargo/bin/obstui");
+        let exe = Path::new("/home/u/.cargo/bin/guaitop");
         let e = std::io::Error::from_raw_os_error(libc::EACCES);
         let msg = open_error_reason(&e, exe);
         assert!(
-            msg.contains("sudo setcap cap_perfmon=ep /home/u/.cargo/bin/obstui"),
+            msg.contains("sudo setcap cap_perfmon=ep /home/u/.cargo/bin/guaitop"),
             "{msg}"
         );
         assert!(msg.contains("rebuild"));

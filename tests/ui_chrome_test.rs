@@ -1,8 +1,8 @@
 mod common;
 
 use common::*;
-use observability::app::Mode;
-use observability::ui::{chrome, theme::Theme};
+use guaitop::app::Mode;
+use guaitop::ui::{chrome, theme::Theme};
 use ratatui::layout::Rect;
 
 fn theme() -> Theme {
@@ -13,7 +13,7 @@ fn theme() -> Theme {
 fn tab_bar_shows_tabs_and_host() {
     let app = sample_app(1);
     let text = render_text(122, 1, |f| chrome::tab_bar(f, f.area(), &app, &theme()));
-    assert!(text.contains("obstui"));
+    assert!(text.contains("guaitop"));
     assert!(text.contains(" 1 Dashboard "));
     assert!(text.contains(" 2 Processes "));
     assert!(text.contains("devhost · up 3d 4h · load 1.42 0.98 0.77"));

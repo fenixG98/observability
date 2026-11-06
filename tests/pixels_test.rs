@@ -1,5 +1,5 @@
-use observability::ui::braille::Pie;
-use observability::ui::pixels::{Graphics, donut_rgba, pie_image_id};
+use guaitop::ui::braille::Pie;
+use guaitop::ui::pixels::{Graphics, donut_rgba, pie_image_id};
 use ratatui::{buffer::Buffer, layout::Rect, style::Color, widgets::Widget};
 use ratatui_image::picker::{Picker, ProtocolType};
 
@@ -158,7 +158,7 @@ fn unchanged_donut_is_not_transmitted_again() {
 
 #[test]
 fn zlib_is_used_on_terminals_known_to_support_it() {
-    use observability::ui::pixels::kitty_zlib_known;
+    use guaitop::ui::pixels::kitty_zlib_known;
     assert!(kitty_zlib_known(Some("xterm-ghostty"), None));
     assert!(kitty_zlib_known(Some("xterm-256color"), Some("ghostty")));
     assert!(kitty_zlib_known(Some("xterm-kitty"), None));

@@ -18,7 +18,7 @@ if ! command -v tmux >/dev/null 2>&1; then
   exit 2
 fi
 
-SESSION="obstui-perf-$$"
+SESSION="guaitop-perf-$$"
 PID=""
 cleanup() {
   [ -n "$PID" ] && kill "$PID" 2>/dev/null || true
@@ -27,7 +27,7 @@ cleanup() {
 trap cleanup EXIT
 
 cargo build --release -q
-BIN="${CARGO_TARGET_DIR:-$PWD/target}/release/obstui"
+BIN="${CARGO_TARGET_DIR:-$PWD/target}/release/guaitop"
 case "$BIN" in /*) ;; *) BIN="$PWD/$BIN" ;; esac
 if [ ! -x "$BIN" ]; then
   echo "binary $BIN not found" >&2
@@ -40,11 +40,11 @@ sleep 3
 PID="$(tmux list-panes -t "$SESSION" -F '#{pane_pid}' 2>/dev/null | head -n1 || true)"
 if [ -z "$PID" ] || [ ! -r "/proc/$PID/stat" ]; then
   PID=""
-  echo "obstui process not found (did it exit before measuring?)" >&2
+  echo "guaitop process not found (did it exit before measuring?)" >&2
   exit 1
 fi
 if [ "$(readlink -f "/proc/$PID/exe")" != "$(readlink -f "$BIN")" ]; then
-  echo "PID $PID is not the obstui binary (it is $(readlink -f "/proc/$PID/exe"))" >&2
+  echo "PID $PID is not the guaitop binary (it is $(readlink -f "/proc/$PID/exe"))" >&2
   exit 1
 fi
 
@@ -55,7 +55,7 @@ W0="$(switches)"
 sleep 20
 if [ ! -r "/proc/$PID/stat" ]; then
   PID=""
-  echo "the obstui process exited during the measurement" >&2
+  echo "the guaitop process exited during the measurement" >&2
   exit 1
 fi
 T1="$(awk '{print $14+$15}' "/proc/$PID/stat")"

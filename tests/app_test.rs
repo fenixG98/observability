@@ -1,11 +1,11 @@
 mod common;
 
 use common::*;
-use observability::app::*;
-use observability::command::{Command, SortKey};
-use observability::config::Config;
-use observability::keys::{Action, Dir, Dispatcher, KeyMap};
-use observability::model::Avail;
+use guaitop::app::*;
+use guaitop::command::{Command, SortKey};
+use guaitop::config::Config;
+use guaitop::keys::{Action, Dir, Dispatcher, KeyMap};
+use guaitop::model::Avail;
 use ratatui::crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use std::time::Duration;
 

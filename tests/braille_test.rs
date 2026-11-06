@@ -1,5 +1,5 @@
-use observability::ui::braille::*;
-use observability::ui::theme::{Theme, cell_aspect};
+use guaitop::ui::braille::*;
+use guaitop::ui::theme::{Theme, cell_aspect};
 use ratatui::{
     buffer::Buffer,
     layout::Rect,

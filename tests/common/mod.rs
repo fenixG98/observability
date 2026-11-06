@@ -1,8 +1,8 @@
 #![allow(dead_code)]
 
-use observability::app::App;
-use observability::config::Config;
-use observability::model::*;
+use guaitop::app::App;
+use guaitop::config::Config;
+use guaitop::model::*;
 use ratatui::{Frame, Terminal, backend::TestBackend};
 
 pub const GIB: u64 = 1 << 30;

@@ -1,4 +1,4 @@
-use observability::history::History;
+use guaitop::history::History;
 
 #[test]
 fn keeps_last_values_in_order() {

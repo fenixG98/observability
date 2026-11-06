@@ -1,9 +1,9 @@
 mod common;
 
 use common::*;
-use observability::app::Panel;
-use observability::model::Avail;
-use observability::ui::{compact, dashboard, theme::Theme};
+use guaitop::app::Panel;
+use guaitop::model::Avail;
+use guaitop::ui::{compact, dashboard, theme::Theme};
 
 fn theme() -> Theme {
     Theme::new(true, 60.0, 80.0)
@@ -38,7 +38,7 @@ fn gpu_panel_explains_missing_permission() {
     let mut app = sample_app(2);
     if let Avail::Ok(g) = &mut app.snapshot.gpus {
         g[0].util = Avail::Unavailable(
-            "permission needed to read the Intel GPU: sudo setcap cap_perfmon=ep /usr/bin/obstui"
+            "permission needed to read the Intel GPU: sudo setcap cap_perfmon=ep /usr/bin/guaitop"
                 .into(),
         );
     }

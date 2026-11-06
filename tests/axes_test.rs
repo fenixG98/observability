@@ -1,5 +1,5 @@
-use observability::ui::axes::*;
-use observability::ui::theme::Theme;
+use guaitop::ui::axes::*;
+use guaitop::ui::theme::Theme;
 use ratatui::{buffer::Buffer, layout::Rect};
 
 fn row(buf: &Buffer, y: u16) -> String {

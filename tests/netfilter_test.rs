@@ -1,4 +1,4 @@
-use observability::collect::netfilter::*;
+use guaitop::collect::netfilter::*;
 
 #[test]
 fn physical_interfaces() {
