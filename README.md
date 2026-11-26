@@ -2,6 +2,8 @@
 
 A lightweight resource monitor for the terminal, for Linux and macOS.
 
+![guaitop dashboard](docs/screenshot.png)
+
 `guaitop` (from the Catalan *guaitar*, "to keep watch") shows CPU, memory, GPU,
 temperatures, network, disk and processes in real time, with circular charts, history
 graphs with scaled axes, tmux-style navigation and k9s-style `:` commands. It is built to stay out of the way: it sleeps until there is a new
